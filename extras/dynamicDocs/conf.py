@@ -42,7 +42,7 @@ if read_the_docs_build:
 # -- Project information -----------------------------------------------------
 
 project = 'mist'
-copyright = '2020, Andrew Banman'
+copyright = '2021, Pacific Northwest Research Institute'
 author = 'Andrew Banman'
 
 
