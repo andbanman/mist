@@ -1,0 +1,19 @@
+set(namespace "it")
+set(it_objects "")
+
+add_namespace_object(BitsetCounter)
+add_namespace_object(Distribution)
+add_namespace_object(EntropyCalculator)
+add_namespace_object(EntropyMeasure)
+add_namespace_object(SymmetricDelta)
+add_namespace_object(VectorCounter)
+
+set(it_objects ${it_objects} PARENT_SCOPE)
+
+if(${BuildTest})
+    add_namespace_test(BitsetCounter $<TARGET_OBJECTS:Variable>)
+    add_namespace_test(EntropyCalculator $<TARGET_OBJECTS:ioDataMatrix> $<TARGET_OBJECTS:Variable> $<TARGET_OBJECTS:itVectorCounter>)
+    add_namespace_test(Distribution)
+    add_namespace_test(SymmetricDelta $<TARGET_OBJECTS:ioDataMatrix> $<TARGET_OBJECTS:Variable> $<TARGET_OBJECTS:itEntropyCalculator> $<TARGET_OBJECTS:itVectorCounter>)
+    add_namespace_test(VectorCounter $<TARGET_OBJECTS:Variable>)
+endif()

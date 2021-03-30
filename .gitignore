@@ -1,0 +1,7 @@
+notes/
+demo/*/build
+compile_commands.json
+.clangd
+build
+.cache
+__pycache__
