@@ -32,7 +32,7 @@ read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
 
 breathe_projects = {}
 if read_the_docs_build:
-	input_dir = '../lib'
+	input_dir = './'
 	output_dir = 'build'
 	configureDoxyfile(input_dir, output_dir)
 	subprocess.call('doxygen', shell=True)
@@ -42,7 +42,7 @@ if read_the_docs_build:
 # -- Project information -----------------------------------------------------
 
 project = 'mist'
-copyright = '2020, Andrew Banman'
+copyright = '2021, Pacific Northwest Research Institute'
 author = 'Andrew Banman'
 
 

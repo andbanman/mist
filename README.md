@@ -7,6 +7,8 @@ Version 0.1.0
 
 Mist for Python is available on PyPi: <https://pypi.org/project/libmist/>
 
+Mist documentation is available on ReadTheDocs: <https://libmist.readthedocs.io>
+
 Quick Start
 ===========
 
