@@ -8,9 +8,10 @@ add_namespace_object(CompletionQueue)
 add_namespace_object(CompletionTupleConsumer)
 add_namespace_object(CompletionTupleProducer)
 add_namespace_object(Coordinator)
+add_namespace_object(TupleSpace)
 
 set(algorithm_objects ${algorithm_objects} PARENT_SCOPE)
 
 if(${BuildTest})
-    # no tests yet...
+    add_namespace_test(TupleSpace $<TARGET_OBJECTS:Variable>)
 endif()
