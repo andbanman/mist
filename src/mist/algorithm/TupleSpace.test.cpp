@@ -7,7 +7,7 @@ using namespace mist;
 using namespace algorithm;
 
 BOOST_AUTO_TEST_CASE(simple_names) {
-    TupleSpace ts(2);
+    TupleSpace ts;
     ts.set_names( { "v1", "v2", "v3" } );
     auto names = ts.names();
     BOOST_TEST(names[0] == "v1");

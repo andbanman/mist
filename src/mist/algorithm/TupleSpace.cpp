@@ -5,68 +5,62 @@
 using namespace mist;
 using namespace mist::algorithm;
 
-struct group {
-    TupleSpace::tuple vars;
-    short min;
-    short max;
-    bool replace;
-};
-
-struct TupleSpace::impl {
-    std::vector<group> groups;
-    std::map<std::string, int> names;
-    int tuplesize;
-    int tuples;
-};
-
-TupleSpace::TupleSpace(int size) : pimpl(std::make_unique<impl>()) {
-    pimpl->tuplesize = size;
-}
-
+TupleSpace::TupleSpace() { };
 TupleSpace::~TupleSpace() { };
 
-int TupleSpace::tuple_size() {
-    return pimpl->tuplesize;
-}
-
-std::vector<std::string> TupleSpace::names() {
-    std::vector<std::string> names;
-    for (auto it = pimpl->names.begin(); it != pimpl->names.end(); ++it)
-      names.push_back(it->first);
-    return names;
+std::vector<std::string> TupleSpace::names() const {
+    return variableNames;
 }
 
 void TupleSpace::set_names(std::vector<std::string> const& names) {
-    int ii = 0;
-    for (auto name : names) {
-        pimpl->names.emplace(name, ii);
-        ii++;
-    }
+    variableNames = names;
 }
 
-void TupleSpace::addGroup(std::vector<std::string> const& names, short min, short max, bool replace) {
-    group newgroup;
-    if (names.empty())
-        throw TupleSpaceException("addGroup", "variable names were not set, missing call to TupleSpace::set_names");
-    for (auto name : names) {
+void TupleSpace::addVariableGroupTuple(std::vector<std::string> const& groupNames) {
+    TupleSpace::tuple_type groupIndexes;
+    for (auto& name : groupNames) {
         try {
-            newgroup.vars.push_back(pimpl->names[name]);
-        }
-        catch(std::out_of_range &e) {
-            throw TupleSpaceException("addGroup", "variable name '"+ name + "' not found");
+            groupIndexes.push_back(variableGroupNames[name]);
+        } catch (std::out_of_range &e) {
+            throw TupleSpaceException("addVariableGroupTuple", "group named " + name + " does not exist.");
         }
     }
-    newgroup.min = min;
-    newgroup.max = max;
-    newgroup.replace = replace;
-    pimpl->groups.push_back(newgroup);
+    addVariableGroupTuple(groupIndexes);
 }
 
-void TupleSpace::addGroup(tuple const& vars, short min, short max, bool replace) {
-    group newgroup;
-    newgroup.vars = vars;
-    newgroup.min = min;
-    newgroup.max = max;
-    newgroup.replace = replace;
-    pimpl->groups.push_back(newgroup);
+void TupleSpace::addVariableGroupTuple(TupleSpace::tuple_type const& groupIndexes) {
+    // validate group indexes
+    for (auto group : groupIndexes)
+        if (group >= variableGroups.size())
+            throw TupleSpaceException("addVariableGroupTuple", "variable group index " + std::to_string(group) + " out of range.");
+    variableGroupTuples.push_back(groupIndexes);
+}
+
+void TupleSpace::addVariableGroup(std::string const& name, TupleSpace::tuple_type const& vars) {
+    variableGroups.push_back(vars);
+    variableGroupNames.emplace(name, variableGroups.size() - 1);
+}
+
+TupleSpace::tuple_type const& TupleSpace::getVariableGroup(int index) const {
+    try {
+        return variableGroups.at(index);
+    } catch (std::out_of_range &e) {
+        throw TupleSpaceException("getVariableGroup", "group index " + std::to_string(index) + " out of range.");
+    }
+}
+
+TupleSpace::tuple_type const& TupleSpace::getVariableGroup(std::string const& name) const {
+    try {
+        return variableGroups.at(variableGroupNames.at(name));
+    } catch (std::out_of_range &e) {
+        throw TupleSpaceException("getVariableGroup", "group named " + name + " does not exist.");
+    }
+}
+
+std::vector<TupleSpace::tuple_type> const& TupleSpace::getVariableGroups() const {
+    return variableGroups;
+}
+
+std::vector<TupleSpace::tuple_type> const& TupleSpace::getVariableGroupTuples() const {
+    return variableGroupTuples;
 }

@@ -13,3 +13,4 @@
 #include "algorithm/CompletionTupleConsumer.hpp"
 #include "algorithm/CompletionTupleProducer.hpp"
 #include "algorithm/Coordinator.hpp"
+#include "algorithm/TupleSpace.hpp"
