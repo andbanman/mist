@@ -9,6 +9,8 @@ add_namespace_object(CompletionTupleConsumer)
 add_namespace_object(CompletionTupleProducer)
 add_namespace_object(Coordinator)
 add_namespace_object(TupleSpace)
+add_namespace_object(TupleSpaceQueue)
+add_namespace_object(TupleSpaceTupleConsumer)
 add_namespace_object(TupleSpaceTupleProducer)
 
 set(algorithm_objects ${algorithm_objects} PARENT_SCOPE)

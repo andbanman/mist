@@ -14,4 +14,6 @@
 #include "algorithm/CompletionTupleProducer.hpp"
 #include "algorithm/Coordinator.hpp"
 #include "algorithm/TupleSpace.hpp"
+#include "algorithm/TupleSpaceQueue.hpp"
+#include "algorithm/TupleSpaceTupleConsumer.hpp"
 #include "algorithm/TupleSpaceTupleProducer.hpp"

@@ -3,17 +3,17 @@
 #include <memory>
 #include <stdexcept>
 
-#include "BatchQueue.hpp"
-#include "BatchTupleConsumer.hpp"
 #include "TupleProducer.hpp"
 #include "TupleSpace.hpp"
+#include "TupleSpaceQueue.hpp"
+#include "TupleSpaceTupleConsumer.hpp"
 
 namespace mist {
 namespace algorithm {
 
 class TupleSpaceTupleProducer : public TupleProducer {
 private:
-    using queue_ptr = std::shared_ptr<BatchQueue>;
+    using queue_ptr = std::shared_ptr<TupleSpaceQueue>;
     TupleSpace tupleSpace;
     queue_ptr queue;
     int batchsize;
@@ -23,11 +23,11 @@ private:
 public:
     TupleSpaceTupleProducer(TupleSpace const& tupleSpace)
         : TupleProducer(0), tupleSpace(tupleSpace), batchsize(10) {
-        this->queue = queue_ptr(new BatchQueue);
+        this->queue = queue_ptr(new TupleSpaceQueue);
     };
     TupleSpaceTupleProducer(TupleSpace const& tupleSpace, int batchsize)
         : TupleProducer(0), tupleSpace(tupleSpace), batchsize(batchsize) {
-        this->queue = queue_ptr(new BatchQueue);
+        this->queue = queue_ptr(new TupleSpaceQueue);
     };
     ~TupleSpaceTupleProducer() { };
 

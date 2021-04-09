@@ -9,17 +9,13 @@ using namespace mist::algorithm;
 // pos          working position in the tuple
 void TupleSpaceTupleProducer::queueTuples(TupleSpace::tuple_type const& groupTuple, TupleSpace::tuple_type & workingTuple, int pos) { 
     auto size = groupTuple.size();
-    if (pos >= size) {
+    if (pos >= size - 1) {
         // done, queue it up
         if (queue) {
-            // translate tuple of variable positions in group to the variable indexes themselves
-            TupleSpace::tuple_type variableTuple(size);
-            for (int ii = 0; ii < size; ii++)
-                variableTuple[ii] = tupleSpace.getVariableGroup(groupTuple[ii])[workingTuple[ii]];
-            //XXX: temp using batch for testing purpose
-            std::vector<TupleSpace::tuple_type> batch;
-            batch.push_back(variableTuple);
-            queue->push(batch);
+            TupleSpaceQueueElement element;
+            element.groupTuple = groupTuple;
+            element.workingTuple = workingTuple;
+            queue->push(element);
         }
     } else {
         // find the appropriate start by tuple up to this point
@@ -49,9 +45,9 @@ void TupleSpaceTupleProducer::start() {
 
 void TupleSpaceTupleProducer::registerConsumer(TupleConsumer & consumer) {
     try {
-        auto batchconsumer = dynamic_cast<BatchTupleConsumer*>(&consumer);
-        batchconsumer->set_queue(this->queue);
+        auto tsconsumer = dynamic_cast<TupleSpaceTupleConsumer*>(&consumer);
+        tsconsumer->set_queue(this->queue);
     } catch (std::bad_cast &e) {
-        throw TupleSpaceTupleProducerException("registerConsumer", "Failed to cast TupleConsumer to BatchTupleConsumer");
+        throw TupleSpaceTupleProducerException("registerConsumer", "Failed to cast TupleConsumer to TupleSpaceTupleConsumer");
     }
 }

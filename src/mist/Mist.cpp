@@ -409,11 +409,10 @@ void Mist::compute() {
             consumers.push_back(consumer_ptr(new algorithm::CompletionTupleConsumer(
                             thread.calculator, thread.output_stream, thread.measure, nvar)));
     } else if (pimpl->thread_algorithm == (int) thread_algorithms::tuplespace) {
-        //TODO tupleSpace
         producer = producer_ptr(new algorithm::TupleSpaceTupleProducer(pimpl->tupleSpace));
         for (auto const& thread : pimpl->threads)
-            consumers.push_back(consumer_ptr(new algorithm::BatchTupleConsumer(
-                            thread.calculator, thread.output_stream, thread.measure)));
+            consumers.push_back(consumer_ptr(new algorithm::TupleSpaceTupleConsumer(
+                            thread.calculator, thread.output_stream, thread.measure, pimpl->tupleSpace)));
     }
     algorithm::Coordinator coord(producer, consumers);
     coord.start();
