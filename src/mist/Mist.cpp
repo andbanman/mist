@@ -24,6 +24,7 @@ std::string Mist::version() {
 enum struct thread_algorithms : int {
     batch,
     completion,
+    tuplespace,
     size
 };
 
@@ -65,6 +66,7 @@ struct Mist::impl {
     int cache_dimensions = 2; // TODO: right now we only support 3D so 2 is complete
     std::size_t cache_memory_size = 0 ;
     std::string cache_files_root;
+    algorithm::TupleSpace tupleSpace;
 
     // state
     int cache_type;
@@ -113,6 +115,8 @@ void Mist::set_thread_algorithm(std::string const& algorithm) {
         pimpl->thread_algorithm = (int) thread_algorithms::batch;
     else if (test == "completion")
         pimpl->thread_algorithm = (int) thread_algorithms::completion;
+    else if (test == "tuplespace")
+        pimpl->thread_algorithm = (int) thread_algorithms::tuplespace;
     else
         throw MistException("set_thread_algorithm", "Invalid thread algorithm: " + algorithm + ", allowed: [batch, completion]");
 }
@@ -228,6 +232,10 @@ void Mist::set_tuple_size(int size) {
     if (size < 2 || size > 3)
         throw MistException("set_tuple_size", "Invalid tuple size " + std::to_string(size) + ", valid range is [2,3]");
     pimpl->tuple_size = size;
+}
+
+void Mist::set_tuple_space(algorithm::TupleSpace const& ts) {
+    pimpl->tupleSpace = ts;
 }
 
 void Mist::set_threads(int threads) { pimpl->no_thread = threads; }
@@ -400,6 +408,12 @@ void Mist::compute() {
         for (auto const& thread : pimpl->threads)
             consumers.push_back(consumer_ptr(new algorithm::CompletionTupleConsumer(
                             thread.calculator, thread.output_stream, thread.measure, nvar)));
+    } else if (pimpl->thread_algorithm == (int) thread_algorithms::tuplespace) {
+        //TODO tupleSpace
+        producer = producer_ptr(new algorithm::TupleSpaceTupleProducer(pimpl->tupleSpace));
+        for (auto const& thread : pimpl->threads)
+            consumers.push_back(consumer_ptr(new algorithm::BatchTupleConsumer(
+                            thread.calculator, thread.output_stream, thread.measure)));
     }
     algorithm::Coordinator coord(producer, consumers);
     coord.start();

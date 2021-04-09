@@ -107,6 +107,10 @@ public:
      */
     void set_tuple_size(int size);
 
+    /** Set the custom tuple space for the next computation
+     */
+    void set_tuple_space(algorithm::TupleSpace const& ts);
+
     /** Enable caching intermediate results for individual Variables.
      */
     void enable_cache_d1();
