@@ -9,6 +9,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "Mist.hpp"
+#include "yaml-cpp/yaml.h"
 
 namespace po = boost::program_options;
 
@@ -18,6 +19,7 @@ struct Parameters {
     std::string pd_algorithm;
     std::string infile;
     std::string outfile;
+    std::string configfile;
     int tuple_size;
     int num_threads;
     bool pd_cache;
@@ -36,6 +38,41 @@ void printParameters(Parameters const& p) {
 
 void printVersion(std::string const& version) {
     std::cout << "Mist library version " << version << "\n";
+}
+
+void load_yml_config(std::string file, mist::Mist &mist) {
+    mist::algorithm::TupleSpace ts;
+    YAML::Node config = YAML::LoadFile(file);
+
+    // parse variable groups
+    // TODO: error processing / exception handling
+    auto variableGroupsYml = config["variable_groups"];
+    for (std::size_t ii = 0; ii < variableGroupsYml.size(); ii++) {
+        auto variableGroupYml = variableGroupsYml[ii];
+        // parse out variables
+        // TODO: interpret ranges
+        auto variablesYml = variableGroupYml["variables"];
+        std::vector<int> vars;
+        for (std::size_t jj = 0; jj < variablesYml.size(); jj++) {
+            vars.push_back(variablesYml[jj].as<int>());
+        }
+        // parse out name
+        ts.addVariableGroup(variableGroupYml["name"].as<std::string>(), vars);
+    }
+
+    // parse variable groups tuples
+    auto variableGroupTuplesYml = config["tuples"];
+    for (std::size_t ii = 0; ii < variableGroupTuplesYml.size(); ii++) {
+        std::vector<std::string> groupTuple;
+        auto variableGroupTupleYml = variableGroupTuplesYml[ii];
+        for (std::size_t jj = 0; jj < variableGroupTupleYml.size(); jj++) {
+            groupTuple.push_back(variableGroupTupleYml[jj].as<std::string>());
+        }
+        // parse out name
+        ts.addVariableGroupTuple(groupTuple);
+    }
+
+    mist.set_tuple_space(ts);
 }
 
 int main(int argc, char *argv[]) {
@@ -65,6 +102,7 @@ int main(int argc, char *argv[]) {
         ("help,h", "Print this help")
         ("input-file,i", po::value(&param.infile), "Input NxM matrix file, CSV and TSV formats accepted")
         ("output-file,o", po::value(&param.outfile)->default_value(dparam.outfile), "Results output file")
+        ("config-file,c", po::value(&param.configfile)->default_value(dparam.configfile), "YML Config file")
         ("tuple-size,s", po::value(&param.tuple_size)->default_value(dparam.tuple_size), "Number of variables in each tuple")
         ("measure,m", po::value(&param.measure)->default_value(dparam.measure), "Information Theory Measure")
         ("version,v", "Print version string and exit")
@@ -100,6 +138,11 @@ int main(int argc, char *argv[]) {
     bool version = vm.count("version");
 
     mist::Mist mist;
+
+    if (!param.configfile.empty()) {
+        load_yml_config(param.configfile, mist);
+        param.thread_algorithm = "TupleSpace";
+    }
 
     if (help) {
         std::cout << usage << opts << "\n";

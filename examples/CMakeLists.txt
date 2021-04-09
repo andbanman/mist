@@ -17,7 +17,12 @@ macro(add_example name)
 endmacro()
 
 add_example(mistcli mist.cpp)
-target_link_libraries(mistcli Boost::program_options)
+
+# add 3rd-party dependency
+add_subdirectory(../extras/yaml-cpp ${CMAKE_CURRENT_BINARY_DIR}/ext/yaml-cpp)
+add_dependencies(mistcli yaml-cpp)
+target_link_libraries(mistcli Boost::program_options ${CMAKE_BINARY_DIR}/lib/libyaml-cpp.a)
+target_include_directories(mistcli PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extras/yaml-cpp/include)
 
 if (${BuildStatic})
     # To static link pthreads you must deal with weak symbols
