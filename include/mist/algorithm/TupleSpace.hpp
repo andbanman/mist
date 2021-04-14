@@ -9,17 +9,41 @@
 namespace mist {
 namespace algorithm {
 
+/** Tuple Space defines the set of tuples over which to run a computation search.
+ */
 class TupleSpace {
 public:
     using tuple_type = Variable::indexes;
     TupleSpace();
     ~TupleSpace();
-    // variableGroupTuple expands into a series of variable tuples based on the
-    // variable group definitions
+    /** Define a named logical group of variables
+     * @param name group name
+     * @param vars set of variables in the group
+     */
     void addVariableGroup(std::string const& name, tuple_type const& vars);
-    void addVariableGroupTuple(std::vector<std::string> const& vars);
-    void addVariableGroupTuple(tuple_type const& vars);
+    /** Add a variable group tuple
+     *
+     * The cross product of groups in the group tuple generates a set of
+     * variable tuples that will be added to the TupleSpace by
+     * TupleSpaceTupleProducer.
+     *
+     * @param groups Array of group names
+     */
+    void addVariableGroupTuple(std::vector<std::string> const& groups);
+    /** Add a variable group tuple
+     *
+     * The cross product of groups in the group tuple generates a set of
+     * variable tuples that will be added to the TupleSpace by
+     * TupleSpaceTupleProducer.
+     *
+     * @param groups Array of group indexed by order created
+     */
+    void addVariableGroupTuple(tuple_type const& groups);
+    /** Get variable names
+     */
     std::vector<std::string> names() const;
+    /** Set variable names
+     */
     void set_names(std::vector<std::string> const& names);
 
     tuple_type const& getVariableGroup(int index) const;
@@ -27,7 +51,6 @@ public:
     std::vector<tuple_type> const& getVariableGroups() const;
     std::vector<tuple_type> const& getVariableGroupTuples() const;
 
-    //tuple_type const& getVariableGroupTuple(int index);
 private:
     // variable names, e.g. from data header
     std::vector<std::string> variableNames;

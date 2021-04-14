@@ -11,6 +11,14 @@
 namespace mist {
 namespace algorithm {
 
+/** Produce tuples from a TupleSpace to be processed by TupleSpaceTupleConsumer
+ *
+ * Uses the "completion" algorithm (see CompletionTupleProducer) As such,
+ * variable groups and group tuples should be written with a mind toward load
+ * balancing, i.e. the last group in the tuple should be as large as possible
+ * to maximize the optimization, but there should be enough partial tuples to
+ * keep each thread in the work pool busy.
+ */
 class TupleSpaceTupleProducer : public TupleProducer {
 private:
     using queue_ptr = std::shared_ptr<TupleSpaceQueue>;

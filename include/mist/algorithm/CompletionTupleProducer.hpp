@@ -9,6 +9,12 @@
 namespace mist {
 namespace algorithm {
 
+/** Produce an exhaustive set of tuples from a set of variables to be processed
+ * by CompletionTupleConsumer
+ *
+ * The "completion" optimization creates partial tuples to be completed by the
+ * consumer. This allows subcalculations one tuple to by the next.
+ */
 class CompletionTupleProducer : public TupleProducer {
 private:
     using queue_ptr = std::shared_ptr<CompletionQueue>;
