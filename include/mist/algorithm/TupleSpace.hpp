@@ -18,7 +18,7 @@ public:
     ~TupleSpace();
     /** Define a named logical group of variables
      * @param name group name
-     * @param vars set of variables in the group
+     * @param vars set of variables in the group, duplicates will be ignored
      */
     void addVariableGroup(std::string const& name, tuple_type const& vars);
     /** Add a variable group tuple

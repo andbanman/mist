@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <map>
+#include <set>
 
 #include "algorithm/TupleSpace.hpp"
 
@@ -37,7 +39,16 @@ void TupleSpace::addVariableGroupTuple(TupleSpace::tuple_type const& groupIndexe
 }
 
 void TupleSpace::addVariableGroup(std::string const& name, TupleSpace::tuple_type const& vars) {
-    variableGroups.push_back(vars);
+    std::set<int> unique_vars;
+    tuple_type group;
+    for (auto var : vars) {
+        if (unique_vars.find(var) == unique_vars.end()) {
+            unique_vars.insert(var);
+            group.push_back(var);
+        }
+    }
+    std::sort(group.begin(), group.end());
+    variableGroups.push_back(group);
     variableGroupNames.emplace(name, variableGroups.size() - 1);
 }
 
