@@ -237,6 +237,7 @@ void Mist::set_tuple_size(int size) {
 
 void Mist::set_tuple_space(algorithm::TupleSpace const& ts) {
     pimpl->tupleSpace = ts;
+    pimpl->thread_algorithm = (int) thread_algorithms::tuplespace;
 }
 
 void Mist::set_threads(int threads) { pimpl->no_thread = threads; }

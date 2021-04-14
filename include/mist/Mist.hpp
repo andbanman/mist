@@ -108,6 +108,9 @@ public:
     void set_tuple_size(int size);
 
     /** Set the custom tuple space for the next computation
+     *
+     * Side effects: sets the thread algorithm to TupleSpace so that the tuple
+     * space becomes effective immediately.
      */
     void set_tuple_space(algorithm::TupleSpace const& ts);
 
