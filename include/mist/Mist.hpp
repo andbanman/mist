@@ -61,14 +61,19 @@ public:
      */
     void set_measure(std::string const& measure);
 
-    /** Set the working-sharing algorithm among threads.
+    /** Set the tuple sharing algorithm between thread
      *
-     * - Batch : Allows configurable payload sizes between threads. Provided
-     *   for completion and experimentation.
-     * - Completion (default) : Reduces the amount of repeated work and is the
-     *   fastest in most use cases.
+     * See algorithm::TupleProducer for list of availabled algorithms.
      */
-    void set_thread_algorithm(std::string const& algorithm);
+    void set_tuple_algorithm(std::string const& tuple_algorithm);
+
+    /** Set the serach space type
+     *
+     * - Exhaustive (default): include all unique combinations of variables in
+     *   the tuple search space.
+     * - TupleSpace : include only tuples defined by algorithm::TupleSpace, see Mist::set_tuple_space.
+     */
+    void set_search_type(std::string const& search_type);
 
     /** Set the algorithm for generating probability distributions.
      *

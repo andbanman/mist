@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "Mist.hpp"
+#include "algorithm/TupleProducer.hpp"
 
 using namespace mist;
 
@@ -22,9 +23,8 @@ std::string Mist::version() {
     return MIST_VERSION;
 }
 
-enum struct thread_algorithms : int {
-    batch,
-    completion,
+enum struct search_types : int {
+    exhaustive,
     tuplespace,
     size
 };
@@ -55,22 +55,23 @@ struct Mist::impl {
     measure_ptr measure;
     std::vector<cache_ptr> shared_caches;
     std::vector<thread_config> threads;
-    int prev_cache_type = (int) cache_types::size;
+    cache_types prev_cache_type = cache_types::size;
 
     // config
+    algorithm::TupleProducer::algorithm tuple_algorithm = algorithm::TupleProducer::algorithm::completion;
     bool cache_d1_enabled = true;
     bool cache_d2_enabled = true;
     int no_thread;
     int tuple_size;
-    int thread_algorithm;
-    int probability_algorithm;
+    search_types search_type;
+    probability_algorithms probability_algorithm;
     int cache_dimensions = 2; // TODO: right now we only support 3D so 2 is complete
     std::size_t cache_memory_size = 0 ;
     std::string cache_files_root;
     algorithm::TupleSpace tupleSpace;
 
     // state
-    int cache_type;
+    cache_types cache_type;
     std::size_t prev_cache_memory_size = 0;
     bool output_ready = false;
 };
@@ -83,9 +84,9 @@ Mist::Mist() : pimpl(std::make_unique<impl>()) {
     // default config
     pimpl->no_thread = std::thread::hardware_concurrency();
     pimpl->tuple_size = 2;
-    pimpl->thread_algorithm = (int) thread_algorithms::completion;
-    pimpl->probability_algorithm = (int) probability_algorithms::vector;
-    pimpl->cache_type = (int) cache_types::memory;
+    pimpl->search_type = search_types::exhaustive;
+    pimpl->probability_algorithm = probability_algorithms::vector;
+    pimpl->cache_type = cache_types::memory;
 };
 
 Mist::Mist(const Mist& other) : pimpl(std::make_unique<impl>()) {
@@ -108,18 +109,28 @@ void Mist::set_measure(std::string const& measure) {
         throw MistException("set_measure", "Invalid measure: " + measure + ", allowed: [SymmetricDelta,Entropy]");
 }
 
-void Mist::set_thread_algorithm(std::string const& algorithm) {
-    std::string test(algorithm);
+void Mist::set_search_type(std::string const& search_type) {
+    std::string test(search_type);
     transform(test.begin(), test.end(), test.begin(), ::tolower);
 
-    if (test == "batch")
-        pimpl->thread_algorithm = (int) thread_algorithms::batch;
-    else if (test == "completion")
-        pimpl->thread_algorithm = (int) thread_algorithms::completion;
+    if (test == "exhaustive")
+        pimpl->search_type = search_types::exhaustive;
     else if (test == "tuplespace")
-        pimpl->thread_algorithm = (int) thread_algorithms::tuplespace;
+        pimpl->search_type = search_types::tuplespace;
     else
-        throw MistException("set_thread_algorithm", "Invalid thread algorithm: " + algorithm + ", allowed: [batch, completion]");
+        throw MistException("set_search_type", "Invalid search space : " + search_type + ", allowed: [Exhaustive, TupleSpace]");
+}
+
+void Mist::set_tuple_algorithm(std::string const& tuple_algorithm) {
+    std::string test(tuple_algorithm);
+    transform(test.begin(), test.end(), test.begin(), ::tolower);
+
+    if (test == "completion")
+        pimpl->tuple_algorithm = algorithm::TupleProducer::algorithm::completion;
+    else if (test == "batch")
+        pimpl->tuple_algorithm = algorithm::TupleProducer::algorithm::batch;
+    else
+        throw MistException("set_tuple_algorithm", "Invalid tuple algorithm: " + tuple_algorithm + ", allowed: [Completion, Batch]");
 }
 
 void Mist::set_probability_algorithm(std::string const& algorithm) {
@@ -127,9 +138,9 @@ void Mist::set_probability_algorithm(std::string const& algorithm) {
     transform(test.begin(), test.end(), test.begin(), ::tolower);
 
     if (test == "bitset")
-        pimpl->probability_algorithm = (int) probability_algorithms::bitset;
+        pimpl->probability_algorithm = probability_algorithms::bitset;
     else if (test == "vector")
-        pimpl->probability_algorithm = (int) probability_algorithms::vector;
+        pimpl->probability_algorithm = probability_algorithms::vector;
     else
         throw MistException("set_probability_algorithm", "Invalid probability algorithm : " + algorithm + ", allowed: [bitset, vector]");
 }
@@ -138,7 +149,7 @@ void Mist::set_probability_algorithm(std::string const& algorithm) {
 //TODO: not implemented
 void Mist::set_cache_files_root(std::string const& directory) {
     throw MistException("set_cache_files", "Not yet implemented.");
-    pimpl->cache_type = (int) cache_types::small_files;
+    pimpl->cache_type = cache_types::small_files;
     pimpl->cache_files_root = directory;
     // TODO validate directory
 }
@@ -148,7 +159,7 @@ void Mist::set_cache_files_root(std::string const& directory) {
 //TODO: not implemented
 void Mist::set_cache_memory(std::size_t size) {
     throw MistException("set_cache_memory", "Not yet implemented.");
-    pimpl->cache_type = (int) cache_types::memory;
+    pimpl->cache_type = cache_types::memory;
     pimpl->cache_memory_size = size;
 }
 #endif
@@ -237,7 +248,7 @@ void Mist::set_tuple_size(int size) {
 
 void Mist::set_tuple_space(algorithm::TupleSpace const& ts) {
     pimpl->tupleSpace = ts;
-    pimpl->thread_algorithm = (int) thread_algorithms::tuplespace;
+    pimpl->search_type = search_types::tuplespace;
 }
 
 void Mist::set_threads(int threads) { pimpl->no_thread = threads; }
@@ -309,7 +320,7 @@ void Mist::configureThreads() {
 
         thread.measure = pimpl->measure;
 
-        if (pimpl->cache_type == (int) cache_types::memory) {
+        if (pimpl->cache_type == cache_types::memory) {
             //TODO: configure to use thread-local caches
             thread.caches.resize(pimpl->shared_caches.size());
             thread.caches.clear();
@@ -322,12 +333,12 @@ void Mist::configureThreads() {
         }
 
         // entropy calculator
-        if (pimpl->probability_algorithm == (int) probability_algorithms::bitset) {
+        if (pimpl->probability_algorithm == probability_algorithms::bitset) {
             thread.calculator = entropy_calc_ptr(
                     new it::EntropyCalculator(variables,
                         std::shared_ptr<it::BitsetCounter>(
                             new it::BitsetCounter(variables)), thread.caches));
-        } else if (pimpl->probability_algorithm == (int) probability_algorithms::vector) {
+        } else if (pimpl->probability_algorithm == probability_algorithms::vector) {
             thread.calculator = entropy_calc_ptr(
                     new it::EntropyCalculator(variables,
                         std::shared_ptr<it::VectorCounter>(
@@ -360,9 +371,9 @@ void Mist::primeCaches() {
         producer_ptr producer;
         std::vector<consumer_ptr> consumers;
         for (auto const& thread : pimpl->threads)
-            consumers.push_back(consumer_ptr(new algorithm::CompletionTupleConsumer(
+            consumers.push_back(consumer_ptr(new algorithm::ExhaustiveTupleConsumer(
                             thread.calculator, 0, entropy_measure, nvar)));
-        producer = producer_ptr(new algorithm::CompletionTupleProducer(2, nvar));
+        producer = producer_ptr(new algorithm::ExhaustiveTupleProducer(2, nvar));
         algorithm::Coordinator coord(producer, consumers);
         coord.start();
     }
@@ -400,22 +411,40 @@ void Mist::compute() {
     // Run algorithm for full tuple size
     producer_ptr producer;
     std::vector<consumer_ptr> consumers;
-    if (pimpl->thread_algorithm == (int) thread_algorithms::batch) {
-        producer = producer_ptr(new algorithm::BatchTupleProducer(tuple_size, nvar));
-        for (auto const& thread : pimpl->threads)
-            consumers.push_back(consumer_ptr(new algorithm::BatchTupleConsumer(
-                            thread.calculator, thread.output_stream, thread.measure)));
-    } else if (pimpl->thread_algorithm == (int) thread_algorithms::completion) {
-        producer = producer_ptr(new algorithm::CompletionTupleProducer(tuple_size, nvar));
-        for (auto const& thread : pimpl->threads)
-            consumers.push_back(consumer_ptr(new algorithm::CompletionTupleConsumer(
-                            thread.calculator, thread.output_stream, thread.measure, nvar)));
-    } else if (pimpl->thread_algorithm == (int) thread_algorithms::tuplespace) {
-        producer = producer_ptr(new algorithm::TupleSpaceTupleProducer(pimpl->tupleSpace));
-        for (auto const& thread : pimpl->threads)
-            consumers.push_back(consumer_ptr(new algorithm::TupleSpaceTupleConsumer(
-                            thread.calculator, thread.output_stream, thread.measure, pimpl->tupleSpace)));
+
+    //producer
+    switch (pimpl->search_type) {
+        case search_types::exhaustive:
+            producer = producer_ptr(new algorithm::ExhaustiveTupleProducer(
+                        tuple_size, nvar, pimpl->tuple_algorithm));
+            break;
+        case search_types::tuplespace:
+            producer = producer_ptr(new algorithm::TupleSpaceTupleProducer(
+                        pimpl->tupleSpace, pimpl->tuple_algorithm));
+            break;
     }
+
+    // consumer(s)
+    // all TupleProducers are capable of queuing in batch mode
+    if (pimpl->tuple_algorithm == algorithm::TupleProducer::algorithm::batch) {
+       for (auto const& thread : pimpl->threads)
+           consumers.push_back(consumer_ptr(new algorithm::BatchTupleConsumer(
+                           thread.calculator, thread.output_stream, thread.measure)));
+    } else if (pimpl->tuple_algorithm == algorithm::TupleProducer::algorithm::completion) {
+        switch (pimpl->search_type) {
+            case search_types::exhaustive:
+                for (auto const& thread : pimpl->threads)
+                    consumers.push_back(consumer_ptr(new algorithm::ExhaustiveTupleConsumer(
+                                    thread.calculator, thread.output_stream, thread.measure, nvar)));
+                break;
+            case search_types::tuplespace:
+                for (auto const& thread : pimpl->threads)
+                    consumers.push_back(consumer_ptr(new algorithm::TupleSpaceTupleConsumer(
+                                    thread.calculator, thread.output_stream, thread.measure, pimpl->tupleSpace)));
+                break;
+        }
+    }
+
     algorithm::Coordinator coord(producer, consumers);
     coord.start();
 }

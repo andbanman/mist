@@ -7,7 +7,7 @@ using namespace mist::algorithm;
 void BatchTupleProducer::start_d1() {
     int nvar = this->nvar;
     int size = this->tuple_size;
-    int batchsize = this->batchsize;
+    int batch_size = this->batch_size;
 
     std::vector<Variable::indexes> batch;
     Variable::indexes tuple(size);
@@ -15,7 +15,7 @@ void BatchTupleProducer::start_d1() {
     for (int ii = 0; ii < nvar; ii++) {
         tuple[0] = ii;
         batch.push_back(tuple);
-        if (batch.size() == batchsize) {
+        if (batch.size() == batch_size) {
             this->queue->push(batch);
             batch.clear();
         }
@@ -27,7 +27,7 @@ void BatchTupleProducer::start_d1() {
 void BatchTupleProducer::start_d2() {
     int nvar = this->nvar;
     int size = this->tuple_size;
-    int batchsize = this->batchsize;
+    int batch_size = this->batch_size;
 
     std::vector<Variable::indexes> batch;
     Variable::indexes tuple(size);
@@ -37,7 +37,7 @@ void BatchTupleProducer::start_d2() {
         for (int jj = ii + 1; jj < nvar; jj++) {
             tuple[1] = jj;
             batch.push_back(tuple);
-            if (batch.size() == batchsize) {
+            if (batch.size() == batch_size) {
                 this->queue->push(batch);
                 batch.clear();
             }
@@ -50,7 +50,7 @@ void BatchTupleProducer::start_d2() {
 void BatchTupleProducer::start_d3() {
     int nvar = this->nvar;
     int size = this->tuple_size;
-    int batchsize = this->batchsize;
+    int batch_size = this->batch_size;
 
     std::vector<Variable::indexes> batch;
     Variable::indexes tuple(size);
@@ -62,7 +62,7 @@ void BatchTupleProducer::start_d3() {
             for (int kk = jj + 1; kk < nvar; kk++) {
                 tuple[2] = kk;
                 batch.push_back(tuple);
-                if (batch.size() == batchsize) {
+                if (batch.size() == batch_size) {
                     this->queue->push(batch);
                     batch.clear();
                 }
@@ -88,6 +88,8 @@ void BatchTupleProducer::start() {
 void BatchTupleProducer::registerConsumer(TupleConsumer & consumer) {
     try {
         auto batchconsumer = dynamic_cast<BatchTupleConsumer*>(&consumer);
+        if (!batchconsumer)
+            throw BatchTupleProducerException("registerConsumer", "Failed to cast TupleConsumer to BatchTupleConsumer");
         batchconsumer->set_queue(this->queue);
     } catch (std::bad_cast &e) {
         throw BatchTupleProducerException("registerConsumer", "Failed to cast TupleConsumer to BatchTupleConsumer");

@@ -1,10 +1,10 @@
-#include "algorithm/CompletionTupleConsumer.hpp"
+#include "algorithm/ExhaustiveTupleConsumer.hpp"
 #include "it/Measure.hpp"
 
 using namespace mist;
 using namespace mist::algorithm;
 
-void CompletionTupleConsumer::start() {
+void ExhaustiveTupleConsumer::start() {
 
     int nvar = this->nvar;
     Variable::indexes tuple(nvar); // TODO type name
