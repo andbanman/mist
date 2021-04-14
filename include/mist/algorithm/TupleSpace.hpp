@@ -19,8 +19,9 @@ public:
     /** Define a named logical group of variables
      * @param name group name
      * @param vars set of variables in the group, duplicates will be ignored
+     * @return index of created variable group
      */
-    void addVariableGroup(std::string const& name, tuple_type const& vars);
+    int addVariableGroup(std::string const& name, tuple_type const& vars);
     /** Add a variable group tuple
      *
      * The cross product of groups in the group tuple generates a set of

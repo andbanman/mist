@@ -38,7 +38,7 @@ void TupleSpace::addVariableGroupTuple(TupleSpace::tuple_type const& groupIndexe
     variableGroupTuples.push_back(groupIndexes);
 }
 
-void TupleSpace::addVariableGroup(std::string const& name, TupleSpace::tuple_type const& vars) {
+int TupleSpace::addVariableGroup(std::string const& name, TupleSpace::tuple_type const& vars) {
     std::set<int> unique_vars;
     tuple_type group;
     for (auto var : vars) {
@@ -49,7 +49,9 @@ void TupleSpace::addVariableGroup(std::string const& name, TupleSpace::tuple_typ
     }
     std::sort(group.begin(), group.end());
     variableGroups.push_back(group);
-    variableGroupNames.emplace(name, variableGroups.size() - 1);
+    int index = variableGroups.size() - 1;
+    variableGroupNames.emplace(name, index);
+    return index;
 }
 
 TupleSpace::tuple_type const& TupleSpace::getVariableGroup(int index) const {
