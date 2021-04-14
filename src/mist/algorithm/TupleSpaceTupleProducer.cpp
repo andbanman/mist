@@ -7,7 +7,7 @@ using namespace mist::algorithm;
 // groupTuple   list of variable groups that define the tuple
 // workingTuple tuple containing position of variable in corresponding group
 // pos          working position in the tuple
-void TupleSpaceTupleProducer::queueTuples(TupleSpace::tuple_type const& groupTuple, TupleSpace::tuple_type & workingTuple, int pos) { 
+void TupleSpaceTupleProducer::queueTuples(TupleSpace::tuple_type const& groupTuple, TupleSpace::tuple_type & workingTuple, int pos) {
     auto size = groupTuple.size();
     if (pos >= size - 1) {
         // done, queue it up
@@ -23,7 +23,7 @@ void TupleSpaceTupleProducer::queueTuples(TupleSpace::tuple_type const& groupTup
         int start = 0;
         for (int ii = 0; ii < pos; ii++) {
             if (groupTuple[ii] == groupTuple[pos])
-                start = std::max(start, workingTuple[ii]);
+                start = std::max(start, workingTuple[ii] + 1);
         }
         //last position in the group
         int end = tupleSpace.getVariableGroup(groupTuple[pos]).size();

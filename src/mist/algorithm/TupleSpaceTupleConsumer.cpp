@@ -19,10 +19,16 @@ void TupleSpaceTupleConsumer::start() {
         int start = 0;
         for (int ii = 0; ii < pos; ii++) {
             if (groupTuple[ii] == groupTuple[pos])
-                start = std::max(start, workingTuple[ii]);
+                start = std::max(start, workingTuple[ii] + 1);
         }
         //last position in the group
         int end = tupleSpace.getVariableGroup(groupTuple[pos]).size();
+
+        // cannot complete the tuple because last index for the group to be
+        // completed is already present in the tuple
+        if (start >= end) {
+            continue;
+        }
 
         // translate working tuple into tuple of variable indexes
         TupleSpace::tuple_type tuple(size);
