@@ -2,6 +2,10 @@
 #include <map>
 #include <set>
 
+#if BOOST_PYTHON_EXTENSIONS
+#include <boost/python/extract.hpp>
+#endif
+
 #include "algorithm/TupleSpace.hpp"
 
 using namespace mist;
@@ -77,3 +81,42 @@ std::vector<TupleSpace::tuple_type> const& TupleSpace::getVariableGroups() const
 std::vector<TupleSpace::tuple_type> const& TupleSpace::getVariableGroupTuples() const {
     return variableGroupTuples;
 }
+
+#if BOOST_PYTHON_EXTENSIONS
+int TupleSpace::pyAddVariableGroup(std::string const& name, p::list const& list) {
+    int n = p::len(list);
+    // copy list in
+    algorithm::TupleSpace::tuple_type vars(n);
+    for (int ii = 0; ii < n; ii++) {
+        p::extract<int> var(list[ii]);
+        if (var.check()) {
+            vars[ii] = var;
+        } else {
+            throw TupleSpaceException("pyAddVariableGroup", "Expected list with elements type int");
+        }
+    }
+    return addVariableGroup(name, vars);
+}
+
+void TupleSpace::pyAddVariableGroupTuple(p::list const& list) {
+    int n = p::len(list);
+    algorithm::TupleSpace::tuple_type groups(n);
+    for (int ii = 0; ii < n; ii++) {
+        p::extract<int> gint(list[ii]);
+        p::extract<std::string> gname(list[ii]);
+        if (gint.check()) {
+            groups[ii] = p::extract<int>(list[ii]);
+        } else if (gname.check()) {
+            std::string name(gname);
+            try {
+                groups[ii] = variableGroupNames.at(name);
+            } catch (std::exception &e) {
+                throw TupleSpaceException("pyAddVariableGroupTuple", "group named " + name + " does not exist.");
+            }
+        } else {
+            throw TupleSpaceException("pyAddVariableGroupTuple", "Expected list with elements type int or str");
+        }
+    }
+    addVariableGroupTuple(groups);
+}
+#endif

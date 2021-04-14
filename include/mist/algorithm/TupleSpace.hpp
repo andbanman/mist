@@ -4,6 +4,11 @@
 #include <memory>
 #include <vector>
 
+#ifdef BOOST_PYTHON_EXTENSIONS
+#include <boost/python.hpp>
+namespace p = boost::python;
+#endif
+
 #include "../Variable.hpp"
 
 namespace mist {
@@ -46,6 +51,11 @@ public:
     /** Set variable names
      */
     void set_names(std::vector<std::string> const& names);
+
+#if BOOST_PYTHON_EXTENSIONS
+    int pyAddVariableGroup(std::string const& name, p::list const& list);
+    void pyAddVariableGroupTuple(p::list const& list);
+#endif
 
     tuple_type const& getVariableGroup(int index) const;
     tuple_type const& getVariableGroup(std::string const& name) const;
