@@ -374,14 +374,14 @@ void Mist::primeCaches() {
 // Run full algoirithm as configured
 //
 void Mist::compute() {
-    int nvar = pimpl->data->n;
-    int tuple_size = pimpl->tuple_size;
-
     // sanity checks
     if (!pimpl->data)
         throw MistException("compute", "No data loaded, use load_file or load_ndarray.");
     if (!pimpl->measure)
         throw MistException("compute", "No IT Measure selected, use set_measure.");
+
+    int nvar = pimpl->data->n;
+    int tuple_size = pimpl->tuple_size;
 
     // Create shared caches
     if (cacheInvalid()) {
