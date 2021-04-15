@@ -84,13 +84,13 @@ Additional Requirements
 - sphinx_rtd_theme <https://github.com/rtfd/sphinx_rtd_theme>
 
 
-Run *cmake* with *BuildDocs* set to *ON*:
+Run *cmake* with *BuildDoc* set to *ON*:
 
 ::
 
     mkdir /path/to/build
     cd /path/to/build
-    cmake -DBuildDocs:BOOL=ON /path/to/mist
+    cmake -DBuildDoc:BOOL=ON /path/to/mist
     make Sphinx
 
 And then run the build as above.
