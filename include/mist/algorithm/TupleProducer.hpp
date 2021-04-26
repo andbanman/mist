@@ -8,18 +8,18 @@ namespace algorithm {
 class TupleProducer {
 public:
     /** Set the working-sharing algorithm between TupleProducer and consumers.
-     *
-     * - Batch : Allows configurable payload sizes between threads. Provided
-     *   for completion and experimentation.
-     * - Completion (default) : Reduces the amount of repeated work and is the
-     *   fastest in most use cases. The "completion" optimization creates
-     *   partial tuples to be completed by the consumer. This allows the
-     *   subcalculations of one tuple to be shared by the next tuple.
      */
     enum struct algorithm : int {
+        /** Allows configurable payload sizes between threads. Provided for
+         * completion and experimentation.
+         */
         batch,
+        /** (default) Reduces the amount of repeated work and is the
+         *  fastest in most use cases. The "completion" optimization creates
+         *  partial tuples to be completed by the consumer. This allows the
+         *  subcalculations of one tuple to be shared by the next tuple.
+         */
         completion,
-        size
     };
 protected:
     int tuple_size;
