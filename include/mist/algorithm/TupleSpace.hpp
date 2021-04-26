@@ -2,6 +2,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
 #ifdef BOOST_PYTHON_EXTENSIONS
@@ -25,6 +26,7 @@ public:
      * @param name group name
      * @param vars set of variables in the group, duplicates will be ignored
      * @return index of created variable group
+     * @throws TupleSpaceException variable already listed in existing variable group
      */
     int addVariableGroup(std::string const& name, tuple_type const& vars);
     /** Add a variable group tuple
@@ -34,6 +36,7 @@ public:
      * TupleSpaceTupleProducer.
      *
      * @param groups Array of group names
+     * @throws TupleSpaceException group does not exists
      */
     void addVariableGroupTuple(std::vector<std::string> const& groups);
     /** Add a variable group tuple
@@ -43,6 +46,7 @@ public:
      * TupleSpaceTupleProducer.
      *
      * @param groups Array of group indexed by order created
+     * @throws TupleSpaceException group index out of range
      */
     void addVariableGroupTuple(tuple_type const& groups);
     /** Get variable names
@@ -71,6 +75,8 @@ private:
     std::map<std::string, int> variableGroupNames;
     // list of groups that define variable tuples
     std::vector<tuple_type> variableGroupTuples;
+    // keep track of seen variables to detect duplicates
+    std::set<int> seen_vars;
 };
 
 class TupleSpaceException : public std::exception {

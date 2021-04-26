@@ -46,9 +46,14 @@ int TupleSpace::addVariableGroup(std::string const& name, TupleSpace::tuple_type
     std::set<int> unique_vars;
     tuple_type group;
     for (auto var : vars) {
+        // ignore duplicates within variable group
         if (unique_vars.find(var) == unique_vars.end()) {
             unique_vars.insert(var);
             group.push_back(var);
+            // check for overlap with other variable groups
+            if (seen_vars.find(var) != seen_vars.end())
+                throw TupleSpaceException("addVariableGroup", "WARNING: variable " + std::to_string(var) + " listed twice in variable group definitions. This exception can be caught if overlapping variable groups are desired (unusual).");
+            seen_vars.emplace(var);
         }
     }
     std::sort(group.begin(), group.end());
