@@ -16,18 +16,17 @@ private:
     using queue_ptr = std::shared_ptr<BatchQueue>;
     queue_ptr queue;
     int nvar;
-    int batchsize;
     void start_d1();
     void start_d2();
     void start_d3();
 
 public:
-    BatchTupleProducer(int tuple_size, int nvar, int batchsize)
-        : TupleProducer(tuple_size), nvar(nvar), batchsize(batchsize) {
+    BatchTupleProducer(int tuple_size, int nvar, int batch_size)
+        : TupleProducer(tuple_size, batch_size), nvar(nvar) {
         this->queue = queue_ptr(new BatchQueue);
     };
     BatchTupleProducer(int tuple_size, int nvar)
-        : TupleProducer(tuple_size), nvar(nvar), batchsize(10) {
+        : TupleProducer(tuple_size, 10), nvar(nvar) {
         this->queue = queue_ptr(new BatchQueue);
     };
     ~BatchTupleProducer() { };

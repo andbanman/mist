@@ -8,7 +8,7 @@
 namespace mist {
 namespace algorithm {
 
-using CompletionQueue = Queue<Variable::indexes>;
+using ExhaustiveQueue = Queue<Variable::indexes>;
 
 } // algorithm
 } // mist

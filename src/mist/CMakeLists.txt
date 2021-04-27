@@ -99,7 +99,7 @@ if (NOT ${BuildPython})
 else()
     # The built library will contain Python extensions
     set(python_library lib${PROJECT_NAME})
-    PYTHON_ADD_MODULE(${python_library} "Pymist.cpp" ${library_objects})
+    PYTHON_ADD_MODULE(${python_library} "PyMist.cpp" ${library_objects})
     target_compile_definitions(${python_library} PRIVATE BOOST_PYTHON_EXTENSIONS)
     target_include_directories(${python_library} PRIVATE
         ${include_path}

@@ -5,6 +5,7 @@
 #include <boost/python/numpy.hpp>
 #endif
 
+#include "algorithm/TupleSpace.hpp"
 #include "io/DataMatrix.hpp"
 #include "Mist.hpp"
 
@@ -30,6 +31,11 @@ BOOST_PYTHON_MODULE(libmist)
         .def_readonly("m", &io::DataMatrix::m)
     ;
 
+    p::class_<algorithm::TupleSpace>("TupleSpace")
+        .def("addVariableGroup", &algorithm::TupleSpace::pyAddVariableGroup)
+        .def("addVariableGroupTuple", &algorithm::TupleSpace::pyAddVariableGroupTuple)
+    ;
+
     p::class_<Mist>("Mist")
         .def("load_ndarray", &Mist::load_ndarray)
         .def("load_file", &Mist::load_file)
@@ -39,7 +45,8 @@ BOOST_PYTHON_MODULE(libmist)
         .def("set_measure", &Mist::set_measure)
         .def("set_threads", &Mist::set_threads)
         .def("set_tuple_size", &Mist::set_tuple_size)
-        .def("set_thread_algorithm", &Mist::set_thread_algorithm)
+        .def("set_tuple_space", &Mist::set_tuple_space)
+        .def("set_search_type", &Mist::set_search_type)
         .def("set_probability_algorithm", &Mist::set_probability_algorithm)
         .def("enable_cache_d1", &Mist::enable_cache_d1)
         .def("enable_cache_d2", &Mist::enable_cache_d2)

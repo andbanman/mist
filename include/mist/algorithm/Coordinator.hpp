@@ -8,8 +8,8 @@
 #include "TupleConsumer.hpp"
 #include "BatchTupleProducer.hpp"
 #include "BatchTupleConsumer.hpp"
-#include "CompletionTupleProducer.hpp"
-#include "CompletionTupleConsumer.hpp"
+#include "ExhaustiveTupleProducer.hpp"
+#include "ExhaustiveTupleConsumer.hpp"
 
 namespace mist {
 namespace algorithm {

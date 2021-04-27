@@ -9,15 +9,25 @@
 #include <boost/algorithm/string.hpp>
 
 #include "Mist.hpp"
+#include "yaml-cpp/yaml.h"
+
+const std::string config_help = "The config file passed with option -c accepts this YAML structure: \n\
+    ---\n\
+    variable_groups: \n\
+      - name: \"\"        #format String, group array \n\
+        variables: []   #format Integer array, variables in the group \n\
+    tuples: \n\
+      - [\"\"]            #format String array, variable group names to form a tuple\n";
 
 namespace po = boost::program_options;
 
 struct Parameters {
     std::string measure;
-    std::string thread_algorithm;
+    std::string tuple_algorithm;
     std::string pd_algorithm;
     std::string infile;
     std::string outfile;
+    std::string configfile;
     int tuple_size;
     int num_threads;
     bool pd_cache;
@@ -25,7 +35,7 @@ struct Parameters {
 
 void printParameters(Parameters const& p) {
     std::cout << "measure: " << p.measure << "\n";
-    std::cout << "thread_algorithm: " << p.thread_algorithm << "\n";
+    std::cout << "tuple_algorithm: " << p.tuple_algorithm << "\n";
     std::cout << "pd_algorithm: " << p.pd_algorithm << "\n";
     std::cout << "infile: " << p.infile << "\n";
     std::cout << "outfile: " << p.outfile << "\n";
@@ -38,6 +48,41 @@ void printVersion(std::string const& version) {
     std::cout << "Mist library version " << version << "\n";
 }
 
+void load_yml_config(std::string file, mist::Mist &mist) {
+    mist::algorithm::TupleSpace ts;
+    YAML::Node config = YAML::LoadFile(file);
+
+    // parse variable groups
+    // TODO: error processing / exception handling
+    auto variableGroupsYml = config["variable_groups"];
+    for (std::size_t ii = 0; ii < variableGroupsYml.size(); ii++) {
+        auto variableGroupYml = variableGroupsYml[ii];
+        // parse out variables
+        // TODO: interpret ranges
+        auto variablesYml = variableGroupYml["variables"];
+        std::vector<int> vars;
+        for (std::size_t jj = 0; jj < variablesYml.size(); jj++) {
+            vars.push_back(variablesYml[jj].as<int>());
+        }
+        // parse out name
+        ts.addVariableGroup(variableGroupYml["name"].as<std::string>(), vars);
+    }
+
+    // parse variable groups tuples
+    auto variableGroupTuplesYml = config["tuples"];
+    for (std::size_t ii = 0; ii < variableGroupTuplesYml.size(); ii++) {
+        std::vector<std::string> groupTuple;
+        auto variableGroupTupleYml = variableGroupTuplesYml[ii];
+        for (std::size_t jj = 0; jj < variableGroupTupleYml.size(); jj++) {
+            groupTuple.push_back(variableGroupTupleYml[jj].as<std::string>());
+        }
+        // parse out name
+        ts.addVariableGroupTuple(groupTuple);
+    }
+
+    mist.set_tuple_space(ts);
+}
+
 int main(int argc, char *argv[]) {
     // Parameters
     Parameters param;
@@ -48,7 +93,7 @@ int main(int argc, char *argv[]) {
     dparam.num_threads = 2;
     dparam.pd_cache = true;
     dparam.measure = "symmetricdelta";
-    dparam.thread_algorithm = "completion";
+    dparam.tuple_algorithm = "completion";
     dparam.pd_algorithm = "vector";
     dparam.outfile = "/dev/stdout";
 
@@ -65,6 +110,7 @@ int main(int argc, char *argv[]) {
         ("help,h", "Print this help")
         ("input-file,i", po::value(&param.infile), "Input NxM matrix file, CSV and TSV formats accepted")
         ("output-file,o", po::value(&param.outfile)->default_value(dparam.outfile), "Results output file")
+        ("config-file,c", po::value(&param.configfile), "YML Config file")
         ("tuple-size,s", po::value(&param.tuple_size)->default_value(dparam.tuple_size), "Number of variables in each tuple")
         ("measure,m", po::value(&param.measure)->default_value(dparam.measure), "Information Theory Measure")
         ("version,v", "Print version string and exit")
@@ -75,7 +121,7 @@ int main(int argc, char *argv[]) {
         ("pd-algorithm", po::value(&param.pd_algorithm)->default_value(dparam.pd_algorithm), "Probabilty distribution counting algorithm")
         ("pd-cache", po::value(&param.pd_cache)->default_value(dparam.pd_cache), "Toggle probability distribution caching")
         ("threads,t", po::value(&param.num_threads)->default_value(dparam.num_threads), "Number of threads")
-        ("thread-algorithm", po::value(&param.thread_algorithm)->default_value(dparam.thread_algorithm), "Thread work-sharing algorithm")
+        ("tuple-algorithm", po::value(&param.tuple_algorithm)->default_value(dparam.tuple_algorithm), "Thread work-sharing algorithm")
     ;
 
     // combine options groups
@@ -101,8 +147,13 @@ int main(int argc, char *argv[]) {
 
     mist::Mist mist;
 
+    if (!param.configfile.empty()) {
+        load_yml_config(param.configfile, mist);
+    }
+
     if (help) {
         std::cout << usage << opts << "\n";
+        std::cout << config_help;
         return 0;
     }
     if (version) {
@@ -120,7 +171,7 @@ int main(int argc, char *argv[]) {
     //
     // Run computation
     //
-    mist.set_thread_algorithm(param.thread_algorithm);
+    mist.set_tuple_algorithm(param.tuple_algorithm);
     mist.set_probability_algorithm(param.pd_algorithm);
     mist.set_threads(param.num_threads);
     mist.set_tuple_size(param.tuple_size);
