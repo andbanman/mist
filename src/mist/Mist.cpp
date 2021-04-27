@@ -320,8 +320,8 @@ void Mist::configureThreads() {
 
         if (pimpl->cache_type == cache_types::memory) {
             //TODO: configure to use thread-local caches
-            thread.caches.resize(pimpl->shared_caches.size());
             thread.caches.clear();
+            thread.caches.resize(pimpl->shared_caches.size());
             if (pimpl->cache_d1_enabled)
                 thread.caches[0] = pimpl->shared_caches[0];
             if (pimpl->cache_d2_enabled)
