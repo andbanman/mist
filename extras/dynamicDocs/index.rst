@@ -9,4 +9,5 @@ Contents
    :glob:
 
    readme
+   userguide
    api
