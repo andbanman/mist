@@ -396,8 +396,8 @@ void Mist::compute() {
     // Create shared caches
     if (cacheInvalid()) {
         pimpl->shared_caches.resize(pimpl->cache_dimensions);
-        pimpl->shared_caches[0] = cache_ptr(new cache::Flat<it::Distribution>(nvar, 1));
-        pimpl->shared_caches[1] = cache_ptr(new cache::Flat<it::Distribution>(nvar, 2));
+        pimpl->shared_caches[0] = cache_ptr(new cache::Flat<it::Entropy>(nvar, 1));
+        pimpl->shared_caches[1] = cache_ptr(new cache::Flat<it::Entropy>(nvar, 2));
     }
 
     configureThreads();

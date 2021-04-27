@@ -14,7 +14,7 @@ using Entropy = double;
 class EntropyCalculator {
 public:
     // TODO split pd-cache and entropy-cache
-    using cache_type = cache::Cache<Distribution>;
+    using cache_type = cache::Cache<Entropy>;
     using cache_ptr_type = std::shared_ptr<cache_type>;
     using counter_type = Counter;
     using counter_ptr_type = std::shared_ptr<counter_type>;

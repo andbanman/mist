@@ -46,16 +46,17 @@ Entropy EntropyCalculator::entropy_cache(tuple_type const& tuple, cache_ptr_type
     Distribution dist;
     if (cache) {
         try {
-            return entropy_it_distribution(*cache->get(tuple));
+            return *cache->get(tuple);
         } catch (std::out_of_range &e) {
             auto dist = counter->count(vars, tuple);
             dist.normalize();
+            auto entropy = entropy_it_distribution(dist);
             try {
-                cache->put(tuple, dist);
+                cache->put(tuple, entropy);
             } catch (std::bad_alloc &e) {
                 // out of memory, continue on
             }
-            return entropy_it_distribution(dist);
+            return entropy;
         }
     } else {
         auto dist = this->counter->count(vars, tuple);
