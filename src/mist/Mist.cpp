@@ -25,20 +25,18 @@ std::string Mist::version() {
 
 enum struct search_types : int {
     exhaustive,
-    tuplespace,
-    size
+    tuplespace
 };
 
 enum struct probability_algorithms : int {
     vector,
-    bitset,
-    size
+    bitset
 };
 
 enum struct cache_types : int {
+    none,
     memory,
-    small_files,
-    size
+    small_files
 };
 
 struct thread_config {
@@ -55,7 +53,7 @@ struct Mist::impl {
     measure_ptr measure;
     std::vector<cache_ptr> shared_caches;
     std::vector<thread_config> threads;
-    cache_types prev_cache_type = cache_types::size;
+    cache_types prev_cache_type = cache_types::none;
 
     // config
     algorithm::TupleProducer::algorithm tuple_algorithm = algorithm::TupleProducer::algorithm::completion;
@@ -71,7 +69,7 @@ struct Mist::impl {
     algorithm::TupleSpace tupleSpace;
 
     // state
-    cache_types cache_type;
+    cache_types cache_type = cache_types::none;
     std::size_t prev_cache_memory_size = 0;
     bool output_ready = false;
 };
