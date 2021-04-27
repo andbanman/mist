@@ -10,7 +10,7 @@ Mist for Python is available on PyPi: <https://pypi.org/project/libmist/>
 Mist documentation is available on ReadTheDocs: <https://libmist.readthedocs.io>
 
 Quick Start
-===========
+-----------
 
 The easiest way to run Mist is through the Python module. The following minimal example sets up a Mist object for a simple Symmetric Delta search (the default IT measurement).
 
@@ -34,10 +34,10 @@ There are numerous functions to configure Mist -- below are some of the most imp
 This Python syntax is virtually identical to the C++ code you would write for a program using the Mist library, as you can see in the examples directory.
 
 Building
-========
+--------
 
 mist
-----
+~~~~
 
 These packages are required to build the mist library:
 
@@ -55,7 +55,7 @@ Run *cmake* in out-of-tree build directory:
 
 
 mist python library
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 Additional requirements:
 
@@ -74,7 +74,7 @@ Run *cmake* with *BuildPython* set to *ON*:
 Note: both the mist and ndarray/Boost.numpy builds use the default python version installed on the system. To use a different python version, change the FindPythonInterp, FindPythonLibs, and FindNumpy invocations in both packages to use the same python version.
 
 Documentation (optional)
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Additional Requirements
 
@@ -96,14 +96,14 @@ Run *cmake* with *BuildDoc* set to *ON*:
 And then run the build as above.
 
 For Developers
-==============
+--------------
 
 This project follows the Pitchfork Layout (PFL).  Namespaces are encapsulated in separate directories. Any physical unit must only include headers within its namespace, the root namespace (core), or interface headers in other namespaces.  The build system discourages violations by making it difficult to link objects across namespaces.
 
 Documentation for this project is dynamically generated with Doxygen and Sphinx. Comments in the source following Javadoc style are included in the docs. Non-documented comments, e.g. implementation notes, developer advice, etc. follow standard C++ comment style. This README and other documents should be written in the intersection of Markdown and reStructuredText <https://gist.github.com/dupuy/1855764> for best interoperability.
 
 Credits
-=======
+-------
 
 Mist is written by Andrew Banman. It is based on software written by Nikita Sakhanenko. The ideas behind entropy-based functional dependency come from Information Theory research by David Galas, Nikita Sakhanenko, and James Kunert.
 
