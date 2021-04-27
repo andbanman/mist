@@ -11,6 +11,14 @@
 #include "Mist.hpp"
 #include "yaml-cpp/yaml.h"
 
+const std::string config_help = "The config file passed with option -c accepts this YAML structure: \n\
+    ---\n\
+    variable_groups: \n\
+      - name: \"\"        #format String, group array \n\
+        variables: []   #format Integer array, variables in the group \n\
+    tuples: \n\
+      - [\"\"]            #format String array, variable group names to form a tuple\n";
+
 namespace po = boost::program_options;
 
 struct Parameters {
@@ -145,6 +153,7 @@ int main(int argc, char *argv[]) {
 
     if (help) {
         std::cout << usage << opts << "\n";
+        std::cout << config_help;
         return 0;
     }
     if (version) {
