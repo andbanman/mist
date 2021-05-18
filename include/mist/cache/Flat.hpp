@@ -7,6 +7,9 @@
 
 #include "Cache.hpp"
 
+#include <float.h>
+#define DOUBLE_UNSET DBL_MAX
+
 namespace mist {
 namespace cache {
 
@@ -44,10 +47,13 @@ public:
             stride *= nvar;
         }
         this->data.resize(stride);
+        // TODO hardcoded for DOUBLE types, but should use template
+        this->data.assign(stride, DOUBLE_UNSET);
     };
 
+    // TODO template for value types
     bool has(key_type const& key) {
-        return (!data[get_index(key)].empty());
+        return (data[get_index(key)] != DOUBLE_UNSET);
     }
 
     std::pair<key_type, val_type> put(key_type const& key, val_type const& val)
@@ -60,7 +66,7 @@ public:
 
     std::shared_ptr<V> get(key_type const& key) {
         auto index = get_index(key);
-        if (!this->data[get_index(key)].empty()) {
+        if (this->data[get_index(key)] != DOUBLE_UNSET) {
             this->_hits++;
             // shared pointer that doesn't own the object
             return std::shared_ptr<V>(std::shared_ptr<V>(), &this->data[get_index(key)]);

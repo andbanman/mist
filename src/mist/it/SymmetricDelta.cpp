@@ -53,7 +53,7 @@ SymmetricDelta::result_type compute_3d(EntropyCalculator & ecalc,
     auto D0 = I012 - I12;
     auto D1 = I012 - I02;
     auto D2 = I012 - I01;
-    auto DD = D0 * D1 * D2;
+    auto DD = -1 * D0 * D1 * D2; //sign change to force positive values
 
     res[(int) sub3::entropy0]     = e0;
     res[(int) sub3::entropy1]     = e1;
@@ -91,7 +91,7 @@ void recompute_3d(EntropyCalculator & ecalc, Variable::indexes const& vars,
     auto D0 = I012 - I12;
     auto D1 = I012 - I02;
     auto D2 = I012 - I01;
-    auto DD = D0 * D1 * D2;
+    auto DD = -1 * D0 * D1 * D2; //sign change to force positive values
 
     // save
     sub[(int) sub3::entropy2]     = e2;

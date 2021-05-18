@@ -320,8 +320,8 @@ void Mist::configureThreads() {
 
         if (pimpl->cache_type == cache_types::memory) {
             //TODO: configure to use thread-local caches
-            thread.caches.resize(pimpl->shared_caches.size());
             thread.caches.clear();
+            thread.caches.resize(pimpl->shared_caches.size());
             if (pimpl->cache_d1_enabled)
                 thread.caches[0] = pimpl->shared_caches[0];
             if (pimpl->cache_d2_enabled)
@@ -396,8 +396,8 @@ void Mist::compute() {
     // Create shared caches
     if (cacheInvalid()) {
         pimpl->shared_caches.resize(pimpl->cache_dimensions);
-        pimpl->shared_caches[0] = cache_ptr(new cache::Flat<it::Distribution>(nvar, 1));
-        pimpl->shared_caches[1] = cache_ptr(new cache::Flat<it::Distribution>(nvar, 2));
+        pimpl->shared_caches[0] = cache_ptr(new cache::Flat<it::Entropy>(nvar, 1));
+        pimpl->shared_caches[1] = cache_ptr(new cache::Flat<it::Entropy>(nvar, 2));
     }
 
     configureThreads();
