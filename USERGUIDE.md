@@ -1,10 +1,34 @@
 User Guide
 ==========
 
+Information Theory measures
+---------------------------
+
+Joint Entropy
+    An estimate of the joint entropy of two or more variables, computed using the naive approach.
+
+Symmetric Delta
+    A novel symmetric measure of functional dependence constructed from joint entropies. Values are always reported as positive real numbers, with larger values indicating stronger signal. Negative values are unlikely but are not meaningful (see missing values below). Values are generally not comparable between data sets or between searches over different variable tuple sizes.
+
+Select the measure you want to compute by name. Mist computes the measure for each variable tuple in the search space (see below). By default the variable indexes and the measure value are written to output in CSV.
+
+::
+
+    # Python syntax
+    mist = libmist.Mist()
+    mist.set_measure("SymmetricDelta")
+    ...
+    mist.compute()
+
+See the API documentation on Mist::set_measure for a list of supported measures and how to choose them. What measure will be most useful depends on the data and how the tuples are constructed.
+
+TODO: feature to output all the subcalculations.
+TODO: header in the output
+
 Narrowing the search space
 --------------------------
 
-By default Mist will compute the configured IT measure for all unique variable tuples, i.e. the complete tuple space. Tuples are constructed by sampling variables without replacement. The size of this search space is *N choose size*, which grows astronomically with the number of variables and the size of the tuples. The complete space for 5000 variables in 3-tuples is over 20 billion tuples! It is often necessary to take a slice of the complete space.
+By default Mist will compute the configured IT measure for all unique variable tuples, i.e. the complete tuple space. Tuples are constructed by sampling variables without replacement. The size of this search space is *N choose T*, which grows astronomically with the number of variables *N* and the size of the tuples *T*. The complete space for 5000 variables in 3-tuples is over 20 billion tuples! It is often necessary to take a slice of the complete space.
 
 The algorithm::TupleSpace class allows you to define a subspace. First, you define two or more *Variable Groups*, which are simply named sets of variables. Usually these groups are disjoint and do not contain duplicates. In this context, Variable indices correspond to their column position in the input data.
 
@@ -49,3 +73,11 @@ Note that Variables are sampled without replacement, groups do not need to be co
     # 2,3,4
 
 The tuples are generated on-the-fly by the TupleProducer thread, and so you do not need to keep the full tuple space in the working set (an option to set a pre-generated tuple space may be added in the future).
+
+Missing values in the data
+--------------------------
+
+Mist throws away missing values on a per-variable basis during computation. Mist does not perform any pruning or data filling at any time. The goal is predictability, and so the onus is on the user to prepare and understand the data. In other words, "garbage in, garbage out." See the API documentation on mist::Variable for details about how missing values are represented.
+
+Since search spaces can be quite large, Mist uses several optimizations to reduce the amount of work. In particular, the joint entropy estimations are saved in memory to be reused in higher-order calculations. For example, in computing the symmetric delta of variable tuple *(0,1,2)* we reuse the previously calculated joint entropies of *(0,1)*, *(0,2)* and *(1,2)*. This optimization can decrease the accuracy of the joint entropy estimation in the presence of missing data. Suppose each variable has 50% missing data rate and the intersection of two variables is very small. The entropy estimation will be worse for the small sample size and will decrease the accuracy of the symmetric delta measure. This can manifest in the result as a false signal or even a sign change (in the case of symmetric delta). Essentially this a problem with small sample sizes. Take care when missing data is in the mix since the joint sample size for some variables may be unacceptable.
+
