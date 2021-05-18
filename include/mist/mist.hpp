@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#define MIST_VERSION "0.1.0"
+#include "Version.hpp"
 
 #include "Permutation.hpp"
 #include "Variable.hpp"

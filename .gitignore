@@ -5,3 +5,4 @@ compile_commands.json
 build
 .cache
 __pycache__
+include/mist/Version.hpp
