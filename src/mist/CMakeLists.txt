@@ -55,9 +55,15 @@ endmacro()
 #
 # Build
 #
+# Generate version file
+add_custom_command(OUTPUT ${include_path}/Version.hpp
+    COMMAND ${PROJECT_SOURCE_DIR}/tools/make-version-file.sh ARGS ${include_path}/Version.hpp
+    DEPENDS ${PROJECT_SOURCE_DIR}/tools/make-version-file.sh
+)
 # Core Objects. These are allowed to be linked to
 add_object(Permutation Permutation.cpp ${include_path}/Permutation.hpp)
-add_object(Variable Variable.cpp ${include_path}/Variable.hpp)
+add_object(Variable Variable.cpp)
+add_object(Version Version.cpp ${include_path}/Version.hpp)
 add_object(Mist Mist.cpp ${include_path}/Mist.hpp ${include_path}/mist.hpp)
 
 # Namespaces
@@ -79,6 +85,7 @@ set(library_objects
     $<TARGET_OBJECTS:Mist>
     $<TARGET_OBJECTS:Permutation>
     $<TARGET_OBJECTS:Variable>
+    $<TARGET_OBJECTS:Version>
     ${algorithm_objects}
     ${cache_objects}
     ${io_objects}
