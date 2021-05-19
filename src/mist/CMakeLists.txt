@@ -64,7 +64,7 @@ add_custom_command(OUTPUT ${include_path}/Version.hpp
 add_object(Permutation Permutation.cpp ${include_path}/Permutation.hpp)
 add_object(Variable Variable.cpp)
 add_object(Version Version.cpp ${include_path}/Version.hpp)
-add_object(Mist Mist.cpp ${include_path}/Mist.hpp ${include_path}/mist.hpp)
+add_object(Mist Mist.cpp ${include_path}/Mist.hpp ${include_path}/mist.hpp ${include_path}/Version.hpp)
 
 # Namespaces
 add_subdirectory(algorithm)
