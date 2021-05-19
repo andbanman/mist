@@ -33,7 +33,7 @@ auto I012 = e0 + e1 + e2 - e01 - e02 - e12 + e012;
 auto D0 = I012 - I12;
 auto D1 = I012 - I02;
 auto D2 = I012 - I01;
-auto DD = D0 * D1 * D2;
+auto DD = -1 * D0 * D1 * D2; //odd dimension sign-flip
 
 double tolerance = 0.00000000001;
 
