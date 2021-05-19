@@ -1,7 +1,7 @@
 import numpy as np
 import filecmp
 
-from mist import DataMatrix
+from libmist import DataMatrix
 from datetime import datetime
 from os import remove as rm
 
