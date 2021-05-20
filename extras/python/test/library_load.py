@@ -1,2 +1,2 @@
 def test_library_load():
-    import mist
+    import libmist

@@ -1,7 +1,8 @@
 import numpy as np
 import filecmp
+import pytest
 
-from mist import DataMatrix
+from libmist import DataMatrix
 from datetime import datetime
 from os import remove as rm
 
@@ -31,26 +32,20 @@ def test_constructor_numpy():
     assert(dm.m == 5)
 
 def test_constructor_numpy_wrong_dtype():
-    x = np.array([0,1,2,4], dtype="int64", order='C');
-    try:
+    x = np.array([[0,1],[2,4]], dtype="int64", order='C');
+    print(x.flags)
+    with pytest.raises(Exception) as exception:
         dm = DataMatrix(x)
-        assert(False)
-    except:
-        assert(True);
 
 def test_constructor_numpy_wrong_memory_layout():
-    x = np.array([0,1,2,4], dtype="int32", order='C');
-    y = np.array([0,1,2,4], dtype="int32", order='F');
-    try:
-        dm = DataMatrix(x)
-        assert(False)
-    except:
-        assert(True);
-    try:
-        dm = DataMatrix(y)
-        assert(True)
-    except:
-        assert(False);
+    c = np.array([[0,1],[2,4]], dtype="int32", order='C');
+    f = np.array([[0,1],[2,4]], dtype="int32", order='F');
+    print(f.flags)
+    print(c.flags)
+    with pytest.raises(Exception) as exception:
+        dm = DataMatrix(f)
+    dm = DataMatrix(c)
+    assert(True)
 
 def test_write_file():
     inputfile = "sample_data.csv"

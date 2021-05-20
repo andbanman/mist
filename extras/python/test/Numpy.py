@@ -1,4 +1,4 @@
-import mist as pld
+import libmist as pld
 import numpy as np
 
 filename = "sample_data.csv"
