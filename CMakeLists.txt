@@ -103,7 +103,7 @@ if(NOT ${BuildPython})
 endif()
 
 if(${BuildDoc})
-    add_subdirectory("extras/dynamicDocs")
+    add_subdirectory("extras/docs")
 endif()
 if(${BuildPython})
     add_subdirectory("extras/python")
