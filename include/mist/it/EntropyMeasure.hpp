@@ -22,12 +22,12 @@ public:
     };
 
     enum struct sub_calc_2d : int {
-        entropy0, entropy1, entropy01,
+        entropy01,
         size
     };
 
     enum struct sub_calc_3d {
-        entropy0, entropy1, entropy2, entropy01, entropy02, entropy12, entropy012,
+        entropy012,
         size
     };
 };
