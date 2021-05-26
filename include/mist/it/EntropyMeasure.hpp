@@ -15,6 +15,7 @@ public:
 
     result_type compute(EntropyCalculator &ecalc, Variable::indexes const& tuple) const;
     void recomputeLastIndex(EntropyCalculator &ecalc, Variable::indexes const& tuple, result_type & sub) const;
+    std::string header(int d, bool full_output) const;
 
     enum struct sub_calc_1d : int {
         entropy0,

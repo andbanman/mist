@@ -82,3 +82,13 @@ void EntropyMeasure::recomputeLastIndex(EntropyCalculator &ecalc, Variable::inde
             break;
     }
 }
+
+std::string EntropyMeasure::header(int d, bool full_output) const {
+    std::string h;
+    switch (d) {
+        case 1: h = "v0,entropy0"; break;
+        case 2: h = "v0,v1,entropy01"; break;
+        case 3: h = "v0,v1,v2,entropy012"; break;
+    }
+    return h;
+}
