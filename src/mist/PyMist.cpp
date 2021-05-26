@@ -52,6 +52,7 @@ BOOST_PYTHON_MODULE(libmist)
         .def("enable_cache_d2", &Mist::enable_cache_d2)
         .def("disable_cache_d1", &Mist::enable_cache_d1)
         .def("disable_cache_d2", &Mist::enable_cache_d2)
+        .def("full_output", &Mist::full_output)
         .def("version", &Mist::version)
     ;
 }

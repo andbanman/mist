@@ -21,6 +21,12 @@ public:
 
     ExhaustiveTupleConsumer(ExhaustiveTupleConsumer const& other) : TupleConsumer(other.calculator, other.out, other.measure), nvar(other.nvar) { };
 
+    ExhaustiveTupleConsumer(entropy_calc_ptr const& calculator, output_stream_ptr const& out, measure_ptr const& measure, int nvar, bool output_all) : TupleConsumer(calculator, out, measure, output_all), nvar(nvar) { };
+
+    ExhaustiveTupleConsumer(entropy_calc_ptr const& calculator, measure_ptr const& measure, int nvar, bool output_all) : TupleConsumer(calculator, measure, output_all), nvar(nvar) { };
+
+    ExhaustiveTupleConsumer(ExhaustiveTupleConsumer const& other, bool output_all) : TupleConsumer(other.calculator, other.out, other.measure, output_all), nvar(other.nvar) { };
+
     ~ExhaustiveTupleConsumer() { };
 
     void set_queue(queue_ptr const& queue) {

@@ -53,7 +53,9 @@ SymmetricDelta::result_type compute_3d(EntropyCalculator & ecalc,
     auto D0 = I012 - I12;
     auto D1 = I012 - I02;
     auto D2 = I012 - I01;
-    auto DD = -1 * D0 * D1 * D2; //sign change to force positive values
+    auto DD = D0 * D1 * D2;
+    //sign change to force positive values
+    DD = (DD) ? -1 * DD : 0;
 
     res[(int) sub3::entropy0]     = e0;
     res[(int) sub3::entropy1]     = e1;
@@ -91,7 +93,9 @@ void recompute_3d(EntropyCalculator & ecalc, Variable::indexes const& vars,
     auto D0 = I012 - I12;
     auto D1 = I012 - I02;
     auto D2 = I012 - I01;
-    auto DD = -1 * D0 * D1 * D2; //sign change to force positive values
+    auto DD = D0 * D1 * D2;
+    //sign change to force positive values
+    DD = (DD) ? -1 * DD : 0;
 
     // save
     sub[(int) sub3::entropy2]     = e2;
@@ -130,4 +134,43 @@ void SymmetricDelta::recomputeLastIndex(EntropyCalculator &ecalc, Variable::inde
         default:
             throw SymmetricDeltaException("recomputeLastIndex", "Unsupported tuple size " + std::to_string(size) + ", valid range [2,3]");
     }
+}
+
+std::string SymmetricDelta::header(int d, bool full_output) const {
+    std::string h;
+
+    if (!full_output) {
+        switch (d) {
+        case 2: return "v0,v1,SymmetricDelta";
+        case 3: return "v0,v1,v2,SymmetricDelta";
+        }
+    }
+
+    switch (d) {
+    case 2:
+        h = "v0,v1,"
+            "entropy0,entropy1,entropy01"
+            ",SymmetricDelta";
+        break;
+    case 3:
+        h = "v0,v1,v2,"
+            "entropy0"
+            ",entropy1"
+            ",entropy2"
+            ",entropy01"
+            ",entropy02"
+            ",entropy12"
+            ",entropy012"
+            ",jointInfo01"
+            ",jointInfo02"
+            ",jointInfo12"
+            ",jointInfo012"
+            ",diffInfo0"
+            ",diffInfo1"
+            ",diffInfo2"
+            ",SymmetricDelta";
+        break;
+    }
+
+    return h;
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "../Variable.hpp"
 
 #include "EntropyCalculator.hpp"
@@ -29,6 +31,14 @@ public:
      * ecalculations.
      */
     virtual void recomputeLastIndex(EntropyCalculator &ecalc, Variable::indexes const& tuple, result_type & sub) const = 0;
+
+    /**
+     * Return a comma-separated header string corresponding to the full results
+     * @param d tuple size
+     * @param full_output whether header should include all subcalculation names
+     * @return header string
+     */
+    virtual std::string header(int d, bool full_output) const = 0;
 };
 
 } // it

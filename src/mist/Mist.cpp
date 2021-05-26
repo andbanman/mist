@@ -59,6 +59,7 @@ struct Mist::impl {
     algorithm::TupleProducer::algorithm tuple_algorithm = algorithm::TupleProducer::algorithm::completion;
     bool cache_d1_enabled = true;
     bool cache_d2_enabled = true;
+    bool full_output = false;
     int no_thread;
     int tuple_size;
     search_types search_type;
@@ -66,12 +67,12 @@ struct Mist::impl {
     int cache_dimensions = 2; // TODO: right now we only support 3D so 2 is complete
     std::size_t cache_memory_size = 0 ;
     std::string cache_files_root;
+    std::string outfile;
     algorithm::TupleSpace tupleSpace;
 
     // state
     cache_types cache_type = cache_types::none;
     std::size_t prev_cache_memory_size = 0;
-    bool output_ready = false;
 };
 
 Mist::Mist() : pimpl(std::make_unique<impl>()) {
@@ -165,11 +166,7 @@ void Mist::set_cache_memory(std::size_t size) {
 void Mist::set_outfile(std::string const& filename) {
     // Thread copies of FileOutputStream should be constructed from
     // this object so they share an underlying file stream
-    pimpl->file_output = file_stream_ptr(new io::FileOutputStream(filename));
-    if (pimpl->file_output)
-        pimpl->output_ready = true;
-    else
-        throw MistException("set_outfile", "Failed to create FileOutputStream from file '" + filename + "'");
+    pimpl->outfile = filename;
 }
 
 #if BOOST_PYTHON_EXTENSIONS
@@ -254,6 +251,7 @@ void Mist::enable_cache_d1() { pimpl->cache_d1_enabled = true; };
 void Mist::enable_cache_d2() { pimpl->cache_d2_enabled = true; };
 void Mist::disable_cache_d1() { pimpl->cache_d1_enabled = false; };
 void Mist::disable_cache_d2() { pimpl->cache_d2_enabled = false; };
+void Mist::full_output() { pimpl->full_output = true; };
 
 void Mist::load_file(std::string const& filename) {
     // TODO invalidate previous results
@@ -393,6 +391,14 @@ void Mist::compute() {
     int nvar = pimpl->data->n;
     int tuple_size = pimpl->tuple_size;
 
+    // initialize output file stream
+    if (!pimpl->outfile.empty()) {
+        auto header = pimpl->measure->header(tuple_size, pimpl->full_output);
+        pimpl->file_output = file_stream_ptr(new io::FileOutputStream(pimpl->outfile, header));
+        if (!pimpl->file_output)
+            throw MistException("compute", "Failed to create FileOutputStream from file '" + pimpl->outfile + "'");
+    }
+
     // Create shared caches
     if (cacheInvalid()) {
         pimpl->shared_caches.resize(pimpl->cache_dimensions);
@@ -427,18 +433,18 @@ void Mist::compute() {
     if (pimpl->tuple_algorithm == algorithm::TupleProducer::algorithm::batch) {
        for (auto const& thread : pimpl->threads)
            consumers.push_back(consumer_ptr(new algorithm::BatchTupleConsumer(
-                           thread.calculator, thread.output_stream, thread.measure)));
+                           thread.calculator, thread.output_stream, thread.measure, pimpl->full_output)));
     } else if (pimpl->tuple_algorithm == algorithm::TupleProducer::algorithm::completion) {
         switch (pimpl->search_type) {
             case search_types::exhaustive:
                 for (auto const& thread : pimpl->threads)
                     consumers.push_back(consumer_ptr(new algorithm::ExhaustiveTupleConsumer(
-                                    thread.calculator, thread.output_stream, thread.measure, nvar)));
+                                    thread.calculator, thread.output_stream, thread.measure, nvar, pimpl->full_output)));
                 break;
             case search_types::tuplespace:
                 for (auto const& thread : pimpl->threads)
                     consumers.push_back(consumer_ptr(new algorithm::TupleSpaceTupleConsumer(
-                                    thread.calculator, thread.output_stream, thread.measure, pimpl->tupleSpace)));
+                                    thread.calculator, thread.output_stream, thread.measure, pimpl->tupleSpace, pimpl->full_output)));
                 break;
         }
     }

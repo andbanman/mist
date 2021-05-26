@@ -119,6 +119,10 @@ public:
      */
     void set_tuple_space(algorithm::TupleSpace const& ts);
 
+    /** Include all subcalculations in the output
+     */
+    void full_output();
+
     /** Enable caching intermediate results for individual Variables.
      */
     void enable_cache_d1();
