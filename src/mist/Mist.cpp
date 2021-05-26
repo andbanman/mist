@@ -67,12 +67,12 @@ struct Mist::impl {
     int cache_dimensions = 2; // TODO: right now we only support 3D so 2 is complete
     std::size_t cache_memory_size = 0 ;
     std::string cache_files_root;
+    std::string outfile;
     algorithm::TupleSpace tupleSpace;
 
     // state
     cache_types cache_type = cache_types::none;
     std::size_t prev_cache_memory_size = 0;
-    bool output_ready = false;
 };
 
 Mist::Mist() : pimpl(std::make_unique<impl>()) {
@@ -166,11 +166,7 @@ void Mist::set_cache_memory(std::size_t size) {
 void Mist::set_outfile(std::string const& filename) {
     // Thread copies of FileOutputStream should be constructed from
     // this object so they share an underlying file stream
-    pimpl->file_output = file_stream_ptr(new io::FileOutputStream(filename));
-    if (pimpl->file_output)
-        pimpl->output_ready = true;
-    else
-        throw MistException("set_outfile", "Failed to create FileOutputStream from file '" + filename + "'");
+    pimpl->outfile = filename;
 }
 
 #if BOOST_PYTHON_EXTENSIONS
@@ -394,6 +390,14 @@ void Mist::compute() {
 
     int nvar = pimpl->data->n;
     int tuple_size = pimpl->tuple_size;
+
+    // initialize output file stream
+    if (!pimpl->outfile.empty()) {
+        auto header = pimpl->measure->header(tuple_size, pimpl->full_output);
+        pimpl->file_output = file_stream_ptr(new io::FileOutputStream(pimpl->outfile, header));
+        if (!pimpl->file_output)
+            throw MistException("compute", "Failed to create FileOutputStream from file '" + pimpl->outfile + "'");
+    }
 
     // Create shared caches
     if (cacheInvalid()) {
