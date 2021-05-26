@@ -37,6 +37,20 @@ protected:
         measure(measure),
         output_all(false)
     {};
+
+    TupleConsumer(entropy_calc_ptr const& calculator, output_stream_ptr const& out, measure_ptr const& measure, bool output_all) :
+        calculator(calculator),
+        out(out),
+        measure(measure),
+        output_all(output_all)
+    {};
+
+    TupleConsumer(entropy_calc_ptr const& calculator, measure_ptr const& measure, bool output_all) :
+        calculator(calculator),
+        out(0),
+        measure(measure),
+        output_all(output_all)
+    {};
 };
 
 } // algorithm

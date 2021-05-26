@@ -59,6 +59,7 @@ struct Mist::impl {
     algorithm::TupleProducer::algorithm tuple_algorithm = algorithm::TupleProducer::algorithm::completion;
     bool cache_d1_enabled = true;
     bool cache_d2_enabled = true;
+    bool full_output = false;
     int no_thread;
     int tuple_size;
     search_types search_type;
@@ -254,6 +255,7 @@ void Mist::enable_cache_d1() { pimpl->cache_d1_enabled = true; };
 void Mist::enable_cache_d2() { pimpl->cache_d2_enabled = true; };
 void Mist::disable_cache_d1() { pimpl->cache_d1_enabled = false; };
 void Mist::disable_cache_d2() { pimpl->cache_d2_enabled = false; };
+void Mist::full_output() { pimpl->full_output = true; };
 
 void Mist::load_file(std::string const& filename) {
     // TODO invalidate previous results
@@ -427,18 +429,18 @@ void Mist::compute() {
     if (pimpl->tuple_algorithm == algorithm::TupleProducer::algorithm::batch) {
        for (auto const& thread : pimpl->threads)
            consumers.push_back(consumer_ptr(new algorithm::BatchTupleConsumer(
-                           thread.calculator, thread.output_stream, thread.measure)));
+                           thread.calculator, thread.output_stream, thread.measure, pimpl->full_output)));
     } else if (pimpl->tuple_algorithm == algorithm::TupleProducer::algorithm::completion) {
         switch (pimpl->search_type) {
             case search_types::exhaustive:
                 for (auto const& thread : pimpl->threads)
                     consumers.push_back(consumer_ptr(new algorithm::ExhaustiveTupleConsumer(
-                                    thread.calculator, thread.output_stream, thread.measure, nvar)));
+                                    thread.calculator, thread.output_stream, thread.measure, nvar, pimpl->full_output)));
                 break;
             case search_types::tuplespace:
                 for (auto const& thread : pimpl->threads)
                     consumers.push_back(consumer_ptr(new algorithm::TupleSpaceTupleConsumer(
-                                    thread.calculator, thread.output_stream, thread.measure, pimpl->tupleSpace)));
+                                    thread.calculator, thread.output_stream, thread.measure, pimpl->tupleSpace, pimpl->full_output)));
                 break;
         }
     }
