@@ -1,7 +1,7 @@
 Mist
 ====
 
-Mist is a **M** ultivariable **I** nformation Theory-based relationship **S** earch **T** ool. The Mist library API computes entropy-based measures that detect functional dependencies between variables.
+MIST is a **M**\ ultivariable **I**\ nformation Theory-based dependence **S**\ earch **T**\ ool. The Mist library API computes entropy-based measures that detect functional dependencies between variables. Mist provides the **libmist** library and **mistcli** Linux command line tool.
 
 - Mist source is hosted on `Github <https://github.com/andbanman/mist/>`_.
 - Mist for Python is available on `PyPi <https://pypi.org/project/libmist/>`_.
@@ -10,14 +10,18 @@ Mist is a **M** ultivariable **I** nformation Theory-based relationship **S** ea
 Background
 ----------
 
-A function between variables is a deterministic relationship between them; it can be as simple as *if X then Y* or something more complicated involving many variables. A *functional dependency* between variables implies the existence of a function. See [Galas2014]_.
+A biological system is intrinsically complex and can be viewed as a large set of components, variables, and attributes that store and transmit information from one another. This information depends on how each component interacts with, and is related to, other components of the system. Handling the problem of representing and measuring the information is the goal of Mist.
 
-Mist is designed to quickly find functional dependencies among many variables without knowing the exact function. It uses model-less Information Theory measures based on entropy to compute the strength of the dependence. It will detect functional dependencies for any function, involving any number of variables -- limited only by processing capabilities. These features make Mist a great tool for paring down a large set of variables to an interesting subset, which may then be studied by other methods.
+A central question of this problem is: How can we fully describe the joint probability density of the *N* variables that define the system? Characterization of the joint probability distribution is at the heart of describing the mathematical dependency among the variables. Mist provides a number of tools that are useful in the pursuit for the description and quantitation of dependences in complex biological systems.
+
+A function between variables defines a deterministic relationship between them, a dependency; it can be as simple as *if X then Y* or something more complicated involving many variables. Thus, a functional dependency among variables implies the existence of a function. See [Galas2014]_. Here we focus on the task of finding a functional dependency without concerning ourselves with the nature of the underlying function.
+
+Mist is designed to quickly find functional dependencies among many variables without knowing the exact function. It uses model-free Information Theory measures based on entropy to compute the strength of the dependence. Mist allows us to detect functional dependencies for any function, involving any number of variables, limited only by processing capabilities and statistical power. This makes Mist a great tool for paring down a large set of variables into an interesting subset of dependencies, which may then be studied by other methods. This may be seen as compression of data by identifying redundant variables.
 
 Quick Start
 -----------
 
-The **libmist** Python module is the easiest way to run Mist. The following minimal example sets up an exhaustive search for dependencies among two variables, estimated with the Symmetric Delta measurement.
+The easiest way to run Mist is by using the **libmist** Python module. The following minimal example sets up an exhaustive search for dependencies between two variables, estimated with the default measurement
 
 ::
 
@@ -38,8 +42,8 @@ There are numerous functions to configure Mist -- below are some of the most imp
 
 This Python syntax is virtually identical to the C++ code you would write for a program using the Mist library, as you can see in the examples directory.
 
-Building
---------
+Installation
+------------
 
 Docker
 ^^^^^^
@@ -61,7 +65,7 @@ The default command builds the Mist python module, which can then be run in an i
 mist
 ^^^^
 
-These packages are required to build the mist library and **mistcli** program:
+These packages are required to build libmist and mistcli:
 
 - CMake (minimum version 3.5)
 - Boost (minimum version 1.58.0)
@@ -73,13 +77,22 @@ Run *cmake* in out-of-tree build directory:
     mkdir /path/to/build
     cd /path/to/build
     cmake /path/to/mist
-    make
+    make install
 
 
 mist python library
 ^^^^^^^^^^^^^^^^^^^
 
-Additional requirements:
+Use pip package manager to install libmist:
+
+::
+
+    pip install libmist
+
+
+Or build and install from source.
+
+Additional build requirements:
 
 - Python development packages (python3-dev or python-dev).
 - Boost Python and Numpy components. For Boost newer than 1.63 use the integrated Boost.Numpy (libboost-numpy) package. For earlier versions install `ndarray/Boost.Numpy <https://github.com/ndarray/Boost.NumPy>`_.
@@ -91,7 +104,7 @@ Run *cmake* with *BuildPython* set to *ON*:
     mkdir /path/to/build
     cd /path/to/build
     cmake -DBuildPython:BOOL=ON /path/to/mist
-    make
+    make install
 
 Note: both the mist and ndarray/Boost.numpy builds use the default python version installed on the system. To use a different python version, change the FindPythonInterp, FindPythonLibs, and FindNumpy invocations in both packages to use the same python version.
 
@@ -136,4 +149,4 @@ References
 
 .. [Galas2014] Galas, David J et al. “Describing the complexity of systems: multivariable "set complexity" and the information basis of systems biology.” Journal of computational biology : a journal of computational molecular cell biology vol. 21,2 (2014): 118-40. doi:10.1089/cmb.2013.0039 `PMC <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3904535/>`_
 
-.. [Shannon1949] Shannon, Claude Elwood, and Warren Weaver. The Mathematical Theory of Communicaton. University of Illinois Press, 1949. 
+.. [Shannon1949] Shannon, Claude Elwood, and Warren Weaver. The Mathematical Theory of Communicaton. University of Illinois Press, 1949.
