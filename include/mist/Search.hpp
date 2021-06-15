@@ -86,7 +86,8 @@ public:
     /** Set number of concurrent ranks to use in this Search.
      *
      * A rank on a computation node is one execution thread. The default ranks
-     * is the number of threads allowed by the node.
+     * is the number of threads allowed by the node. Setting ranks to 0 causes
+     * the system to use the maximum.
      */
     void set_ranks(int ranks);
     int get_ranks();

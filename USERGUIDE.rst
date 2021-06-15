@@ -8,18 +8,14 @@ This guide explains how to prepare data for Mist, set up and execute a search, a
 3. Define the search space
 4. Compute
 
-Here we assume that we have a set of variables representing the components of a system we study and a set of samples representing multiple measurements of these variables. So, input data is represented by a matrix, where each column is a variable and each row is a sample, e.g., a measurement or subject. A variable tuple is a small combination of variables. The set of all variable tuples is the search space. Mist allows us to efficiently traverse the search space and compute the Information Theory measure for each tuple, which in turn allows us to estimate the strength of the dependence among variables in the tuple.
+Here we assume that we have a set of variables representing the components of a system we study and a set of samples representing multiple measurements of these variables. So, input data is represented by a matrix, where each column is a variable and each row is a sample, e.g., a measurement or subject. A variable tuple is a small combination of variables. The set of all variable tuples is the search space. Mist efficiently traverses the search space and computes the Information Theory measure for each tuple, which in turn allows us to estimate the strength of the dependence among variables in the tuple.
 
-<<<<<<< HEAD
-The procedure of defining a search space and computing the IT measure for each tuple in the space is simply called a *search*. Mist uses a parallel algorithm to divide the search among computing ranks. Each rank is a computing thread, and ranks can be placed on multiple nodes in a system.
-=======
-The procedure of defining a search space and computing the IT measure for each tuple in the space is simply called a search. Mist uses a parallel algorithm to divide the search among computing threads; a tuple producer thread generates variable tuples while many tuple consumer threads compute the IT Measure. The algorithm can be tuned to improve performance for different kinds of searches.
+The procedure of defining a search space and computing the IT measure for each tuple in the space is simply called a search. Mist uses a parallel algorithm to divide the search among computing threads. The algorithm can be tuned to improve performance for different kinds of searches.
 
->>>>>>> Review update
 Run modes
 ---------
 
-There are three ways to run Mist. They all use the same `Mist C++ API <api.html>`_.
+There are three ways to run Mist. They all use the same `Mist C++ library <api.html>`_.
 
 Python Module
 ^^^^^^^^^^^^^
@@ -80,7 +76,7 @@ Prepare the Data
 
 Data should be prepared to meet these requirements:
 
-- Arranged as *NxM* matrix, with each column a variable.
+- Arranged as *NxM* matrix, where each column is a variable and each row is a sample.
 - Continuous variables discretized into non-negative integer bins (for best performance, bins should be contiguous and start at 0).
 - Missing values represented by a negative integer.
 
@@ -93,7 +89,7 @@ The data can be loaded from a CSV file ...
 ::
 
     import libmist
-    search = libsearch.Mist()
+    search = libmist.Mist()
     search.load_file('/path/to/data.csv')
 
 ... or a Python `Numpy ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_.
@@ -125,7 +121,7 @@ For example, you mave have a missing value rate of about 50% for each variable, 
 
 In this contrived example, pairs involving *V0* have a much smaller effective sample size because its missing value pattern is opposite to that of the other variables. A similar situation can arise in real data, say when one variable systematically missed one half the sample population while another variable systematically missed the other half.
 
-Under the hood, Mist computes joint entropy estimations that are sensitive to small sample size. If the effective sample size is very small, the estimate can have large fluctuations from the true entropy value. Since joint entropy estimations are used to calculate higher-order measures, such as Symmetric Delta, these fluctuation could lead to spurious results. That is why you should always check the effective sample size of any tuples with interesting signals.
+Under the hood, Mist computes joint entropy estimations that are sensitive to small sample size. If the effective sample size is very small, the estimate can have large fluctuations from the true entropy value. Since joint entropy estimations are used to calculate higher-order measures, such as Symmetric Delta, these fluctuation could lead to spurious results. That is why you should always check the effective sample size of any tuples with interesting signals, such as potential outliers or candidates for a functional dependence.
 
 
 Select an appropriate Information Theory Measure
@@ -136,10 +132,10 @@ Select the measure you want to compute with `Mist::set_measure <api.html#_CPPv2N
 ::
 
     import libmist
-    search = libsearch.Mist()
+    search = libmist.Mist()
     search.measure = "SymmetricDelta"
 
-The appropriate measure depends on the data and what question you are trying to answer. Currently, there are two measures available: Joint Entropy and Symmetric Delta.
+The appropriate measure depends on the data and the question you are trying to answer. Currently, there are two measures available: Joint Entropy and Symmetric Delta.
 
 Joint Entropy
 ^^^^^^^^^^^^^
@@ -149,7 +145,7 @@ An estimate of the joint entropy of two or more variables, computed using the na
 Symmetric Delta
 ^^^^^^^^^^^^^^^
 
-A novel symmetric measure of functional dependence constructed from joint entropies [Galas2014]_. Values are always reported as positive real numbers, with larger values indicating stronger signal. Missing values may cause a sign change for low-signal tuples, but these can be ignored.
+A novel symmetric measure of functional dependence constructed from joint entropies [Galas2014]_. Values are always reported as positive real numbers [1]_, with larger values indicating stronger signal. Missing values may cause a sign change for low-signal tuples, but these can be ignored.
 
 
 Define the search Space
@@ -168,7 +164,7 @@ Set the size of tuples in the default space with `Mist::set_tuple_size <api.html
 
   search.tuple_size = 3
 
-Beware of the size of the exhaustive space: a large number of variables and tuple size leads to combinatorial explosion, e.g., the exhaustive search space of 5000 variables in 3-tuples is over 20 billion tuples!
+Beware of the size of the exhaustive space: a large number of variables and tuple size 3 and greater leads to combinatorial explosion, e.g., the exhaustive search space of 5000 variables in 3-tuples is over 20 billion tuples!
 
 
 Custom search space
@@ -183,7 +179,7 @@ You can define a smaller search space using the `TupleSpace <api.html#_CPPv2N4mi
 ::
 
     import libmist
-    ts = libsearch.TupleSpace()
+    ts = libmist.TupleSpace()
 
 **2. Define Variable Groups**
 
@@ -232,7 +228,7 @@ Note that the order in a group tuple is not important, so the group tuples "A,B"
 
 **4. Set the TupleSpace**
 
-Finally, load the TupleSpace object to set the tuple space. Now when you run the computation only the desired tuples will be included.
+Finally, load the TupleSpace object to set the tuple space. Now, when you run the computation, only the desired tuples will be included.
 
 ::
 
@@ -243,7 +239,7 @@ Note: tuple_space and tuple_size parameters are mutually exclusive. The tuple_sp
 Genetics Example
 ****************
 
-Consider a more realistic example in genetics. Suppose we have a single phenotype of interest and 5000 single nucleotide polymorphisms (SNPs) that might be related. If we are interested only in finding functional dependencies between the SNPs and the single phenotype, then we should exclude tuples containing only SNPs. The following few lines of code specifies this example, assuming our phenotype variable is in the first position with all other variables being SNPs
+Consider a more realistic example in genetics. Suppose we have a single phenotype of interest and 5000 single nucleotide polymorphisms (SNPs) that might be related. If we are interested only in finding functional dependencies between the SNPs and the single phenotype, then we should exclude tuples containing only SNPs. The following few lines of code specifies this example, assuming our phenotype variable is in position 0 with all other variables being SNPs
 
 ::
 
@@ -257,7 +253,7 @@ This custom search space reduces the size from roughly 20 billion tuples to 12.5
 Compute
 -------
 
-Before starting the computation  of information measures you should configure the output file with `Mist::set_outfile <api.html#_CPPv2N4mist4Mist11set_outfileERNSt6stringE>`_. For small search spaces this could be the stdout stream, but more often you will pick file destination.
+Before starting the computation of information measures you should configure the output file with `Mist::set_outfile <api.html#_CPPv2N4mist4Mist11set_outfileERNSt6stringE>`_. For small search spaces this could be the ``stdout`` stream, but more often you will pick a file destination.
 
 ::
 
@@ -280,6 +276,8 @@ The most important factors affecting the overall runtime of a search are the siz
 
     search.threads = 10
 
+The default number of threads is the maximum allowed by the system (e.g. what you get from the ``nproc`` command). Setting threads equal to 0 implies the maximum allowed.
+
 Advanced
 ^^^^^^^^
 
@@ -293,3 +291,7 @@ Counting probability distributions is the most time-consuming part of computing 
 For very "tall" data (many rows for each variable) we can speed up the algorithm by casting each variable as series of bitsets, rather than using the typical vector representation. This allows faster entropy calculation at the cost of some memory and computation overhead. This option is not advantageous for "short" data, and disastrous if variables have many value bins.
 
 It's worth experimenting with this option if your variable have three or fewer bins, and/or your variables have thousands or ten's of thousands of rows.
+
+Notes
+-----
+.. [1] Symmetric Delta, as described in [Galas2014]_, has negative sign for odd-dimension tuples. In Mist we give the magnitude always so it is clear what tail of the distribution holds the signal.

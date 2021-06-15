@@ -1,11 +1,11 @@
 Mist
 ====
 
-MIST is a **M**\ ultivariable **I**\ nformation Theory-based dependence **S**\ earch **T**\ ool. The Mist library API computes entropy-based measures that detect functional dependencies between variables. Mist provides the **libmist** library and **mistcli** Linux command line tool.
+*MIST* is a **M**\ ultivariable **I**\ nformation Theory-based dependence **S**\ earch **T**\ ool. The Mist library computes entropy-based measures that detect functional dependencies between variables. Mist provides the **libmist** library and **mistcli** Linux command line tool.
 
 - Mist source is hosted on `Github <https://github.com/andbanman/mist/>`_.
 - Mist for Python is available on `PyPi <https://pypi.org/project/libmist/>`_.
-- Mist documentation is hosted on `ReadTheDocs <https://libsearch.readthedocs.io>`_.
+- Mist documentation is hosted on `ReadTheDocs <https://libmist.readthedocs.io>`_.
 
 Background
 ----------
@@ -16,7 +16,7 @@ A central question of this problem is: How can we fully describe the joint proba
 
 A function between variables defines a deterministic relationship between them, a dependency; it can be as simple as *if X then Y* or something more complicated involving many variables. Thus, a functional dependency among variables implies the existence of a function. See [Galas2014]_. Here we focus on the task of finding a functional dependency without concerning ourselves with the nature of the underlying function.
 
-Mist is designed to quickly find functional dependencies among many variables without knowing the exact function. It uses model-free Information Theory measures based on entropy to compute the strength of the dependence. Mist allows us to detect functional dependencies for any function, involving any number of variables, limited only by processing capabilities and statistical power. This makes Mist a great tool for paring down a large set of variables into an interesting subset of dependencies, which may then be studied by other methods. This may be seen as compression of data by identifying redundant variables.
+Mist is designed to quickly find functional dependencies among many variables. It uses model-free Information Theory measures based on entropy to compute the strength of the dependence. Mist allows us to detect functional dependencies for any function, involving any number of variables, limited only by processing capabilities and statistical power. This makes Mist a great tool for paring down a large set of variables into an interesting subset of dependencies, which may then be studied by other methods. This may be seen as compression of data by identifying redundant variables.
 
 Quick Start
 -----------
@@ -26,7 +26,7 @@ The easiest way to run Mist is by using the **libmist** Python module. The follo
 ::
 
     import libmist
-    search = libsearch.Search()
+    search = libmist.Search()
     search.load_file('/path/to/data.csv')
     search.outfile = '/dev/stdout'
     search.start()
@@ -108,8 +108,8 @@ Run *cmake* with *BuildPython* set to *ON*:
 
 Note: both the mist and ndarray/Boost.numpy builds use the default python version installed on the system. To use a different python version, change the FindPythonInterp, FindPythonLibs, and FindNumpy invocations in both packages to use the same python version.
 
-Documentation (optional)
-^^^^^^^^^^^^^^^^^^^^^^^^
+Documentation
+^^^^^^^^^^^^^
 
 Additional Requirements
 
