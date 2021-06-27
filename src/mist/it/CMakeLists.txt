@@ -3,6 +3,7 @@ set(it_objects "")
 
 add_namespace_object(BitsetCounter)
 add_namespace_object(Distribution)
+add_namespace_object(Entropy)
 add_namespace_object(EntropyCalculator)
 add_namespace_object(EntropyMeasure)
 add_namespace_object(SymmetricDelta)
