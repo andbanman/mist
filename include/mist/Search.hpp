@@ -61,12 +61,6 @@ public:
      */
     void set_measure(std::string const& measure);
 
-    /** Set the tuple sharing algorithm between thread
-     *
-     * See algorithm::TupleProducer for list of availabled algorithms.
-     */
-    void set_tuple_algorithm(std::string const& tuple_algorithm);
-
     /** Set the serach space type
      *
      * - Exhaustive (default): include all unique combinations of variables in
