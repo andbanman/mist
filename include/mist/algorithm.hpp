@@ -17,3 +17,4 @@
 #include "algorithm/TupleSpaceQueue.hpp"
 #include "algorithm/TupleSpaceTupleConsumer.hpp"
 #include "algorithm/TupleSpaceTupleProducer.hpp"
+#include "algorithm/Worker.hpp"
