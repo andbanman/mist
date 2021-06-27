@@ -92,11 +92,6 @@ public:
     void set_probability_algorithm(std::string const& algorithm);
 
     /** Set output CSV file.
-     *
-     * Side effects
-     * - disables in-memory result keeping, causing get_results to throw.
-     *
-     * TODO: remove side effect.
      */
     void set_outfile(std::string const& filename);
 
@@ -166,22 +161,6 @@ public:
      * configured search space.
      */
     void compute();
-
-#if BOOST_PYTHON_EXTENSIONS
-    /** Return computation results in a Python Numpy.ndarray.
-     *
-     * @throws exception set_outfile has been called
-     * @see set_outfile
-     */
-    np::ndarray python_get_results();
-#endif
-
-    /** Return computation results in the native data type.
-     *
-     * @throws exception set_outfile has been called
-     * @see set_outfile
-     */
-    io::MapOutputStream::map_type get_results();
 
     /** Print cache statistics for each cache in each thread to stdout.
      */
