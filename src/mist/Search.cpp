@@ -3,10 +3,13 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept>
+#include <thread>
 #include <vector>
 
 #include "Search.hpp"
-#include "algorithm/TupleProducer.hpp"
+#include "algorithm/TupleSpace.hpp"
+#include "algorithm/Worker.hpp"
+#include "it/Entropy.hpp"
 
 using namespace mist;
 
@@ -16,17 +19,10 @@ using file_stream_ptr   = std::shared_ptr<io::FileOutputStream>;
 using measure_ptr       = std::shared_ptr<it::Measure>;
 using cache_ptr         = it::EntropyCalculator::cache_ptr_type;
 using entropy_calc_ptr  = std::shared_ptr<it::EntropyCalculator>;
-using producer_ptr      = std::shared_ptr<algorithm::TupleProducer>;
-using consumer_ptr      = std::shared_ptr<algorithm::TupleConsumer>;
 
 std::string Search::version() {
     return MIST_VERSION;
 }
-
-enum struct search_types : int {
-    exhaustive,
-    tuplespace
-};
 
 enum struct probability_algorithms : int {
     vector,
@@ -56,13 +52,11 @@ struct Search::impl {
     cache_types prev_cache_type = cache_types::none;
 
     // config
-    algorithm::TupleProducer::algorithm tuple_algorithm = algorithm::TupleProducer::algorithm::completion;
     bool cache_d1_enabled = true;
     bool cache_d2_enabled = true;
     bool full_output = false;
     int no_thread;
     int tuple_size;
-    search_types search_type;
     probability_algorithms probability_algorithm;
     int cache_dimensions = 2; // TODO: right now we only support 3D so 2 is complete
     std::size_t cache_memory_size = 0 ;
@@ -83,7 +77,6 @@ Search::Search() : pimpl(std::make_unique<impl>()) {
     // default config
     pimpl->no_thread = std::thread::hardware_concurrency();
     pimpl->tuple_size = 2;
-    pimpl->search_type = search_types::exhaustive;
     pimpl->probability_algorithm = probability_algorithms::vector;
     pimpl->cache_type = cache_types::memory;
 };
@@ -106,30 +99,6 @@ void Search::set_measure(std::string const& measure) {
         pimpl->measure = measure_ptr(new it::EntropyMeasure());
     else
         throw SearchException("set_measure", "Invalid measure: " + measure + ", allowed: [SymmetricDelta,Entropy]");
-}
-
-void Search::set_search_type(std::string const& search_type) {
-    std::string test(search_type);
-    transform(test.begin(), test.end(), test.begin(), ::tolower);
-
-    if (test == "exhaustive")
-        pimpl->search_type = search_types::exhaustive;
-    else if (test == "tuplespace")
-        pimpl->search_type = search_types::tuplespace;
-    else
-        throw SearchException("set_search_type", "Invalid search space : " + search_type + ", allowed: [Exhaustive, TupleSpace]");
-}
-
-void Search::set_tuple_algorithm(std::string const& tuple_algorithm) {
-    std::string test(tuple_algorithm);
-    transform(test.begin(), test.end(), test.begin(), ::tolower);
-
-    if (test == "completion")
-        pimpl->tuple_algorithm = algorithm::TupleProducer::algorithm::completion;
-    else if (test == "batch")
-        pimpl->tuple_algorithm = algorithm::TupleProducer::algorithm::batch;
-    else
-        throw SearchException("set_tuple_algorithm", "Invalid tuple algorithm: " + tuple_algorithm + ", allowed: [Completion, Batch]");
 }
 
 void Search::set_probability_algorithm(std::string const& algorithm) {
@@ -245,7 +214,7 @@ void Search::set_tuple_size(int size) {
 
 void Search::set_tuple_space(algorithm::TupleSpace const& ts) {
     pimpl->tupleSpace = ts;
-    pimpl->search_type = search_types::tuplespace;
+    pimpl->tuple_size = ts.tupleSize();
 }
 
 void Search::set_threads(int threads) { pimpl->no_thread = threads; }
@@ -299,81 +268,42 @@ bool Search::cacheInvalid() {
            );
 }
 
-void Search::configureThreads() {
-    int nvar = pimpl->data->n;
-    int tuple_size = pimpl->tuple_size;
-    //TODO: threaded 1 producer and 1 consumer not possible, see Coordinator.cpp
-    int num_consumers = (pimpl->no_thread > 1) ? pimpl->no_thread - 1 : 1;
-    auto variables = pimpl->data->variables();
-    auto rebuildCache = cacheInvalid();
-
-    // Reconfigure threads
-    pimpl->threads.resize(num_consumers);
-    for (auto& thread : pimpl->threads) {
-        // outputs
-        if (pimpl->file_output)
-            thread.output_stream = std::shared_ptr<io::OutputStream>(new io::FileOutputStream(*pimpl->file_output));
-        else
-            thread.output_stream = std::shared_ptr<io::OutputStream>(new io::MapOutputStream());
-
-        thread.measure = pimpl->measure;
-
-        if (pimpl->cache_type == cache_types::memory) {
-            //TODO: configure to use thread-local caches
-            thread.caches.clear();
-            thread.caches.resize(pimpl->shared_caches.size());
-            if (pimpl->cache_d1_enabled)
-                thread.caches[0] = pimpl->shared_caches[0];
-            if (pimpl->cache_d2_enabled)
-                thread.caches[1] = pimpl->shared_caches[1];
-        } else {
-            thread.caches.clear();
-        }
-
-        // entropy calculator
-        if (pimpl->probability_algorithm == probability_algorithms::bitset) {
-            thread.calculator = entropy_calc_ptr(
-                    new it::EntropyCalculator(variables,
-                        std::shared_ptr<it::BitsetCounter>(
-                            new it::BitsetCounter(variables)), thread.caches));
-        } else if (pimpl->probability_algorithm == probability_algorithms::vector) {
-            thread.calculator = entropy_calc_ptr(
-                    new it::EntropyCalculator(variables,
-                        std::shared_ptr<it::VectorCounter>(
-                            new it::VectorCounter()), thread.caches));
-        }
-    }
-}
-
 void Search::primeCaches() {
     auto entropy_measure = measure_ptr(new it::EntropyMeasure());
     int nvar = pimpl->data->n;
+    int tuple_size = pimpl->tuple_size;
+    int num_thread = pimpl->no_thread;
+    auto variables = pimpl->data->variables();
 
     // By taking each dimension on its own we prevent any two threads from
     // seeing the same tuple. Only safe for pre-sized caches, e.g. Flat, that
     // are thread-safe for unique puts. For other cache types use a single
-    // consumer.
+    // worker.
 
-    if (pimpl->cache_d1_enabled && pimpl->tuple_size > 1) {
-        producer_ptr producer;
-        std::vector<consumer_ptr> consumers;
-        for (auto const& thread : pimpl->threads)
-            consumers.push_back(consumer_ptr(new algorithm::BatchTupleConsumer(
-                            thread.calculator, 0, entropy_measure)));
-        producer = producer_ptr(new algorithm::BatchTupleProducer(1, nvar));
-        algorithm::Coordinator coord(producer, consumers);
-        coord.start();
+    // create caches
+    if (pimpl->shared_caches.empty()) {
+        pimpl->shared_caches.resize(2);
+        pimpl->shared_caches[0] = cache_ptr(new cache::Flat<it::entropy_type>(nvar, 1));
+        pimpl->shared_caches[1] = cache_ptr(new cache::Flat<it::entropy_type>(nvar, 2));
     }
 
-    if (pimpl->cache_d2_enabled && pimpl->tuple_size > 2) {
-        producer_ptr producer;
-        std::vector<consumer_ptr> consumers;
-        for (auto const& thread : pimpl->threads)
-            consumers.push_back(consumer_ptr(new algorithm::ExhaustiveTupleConsumer(
-                            thread.calculator, 0, entropy_measure, nvar)));
-        producer = producer_ptr(new algorithm::ExhaustiveTupleProducer(2, nvar));
-        algorithm::Coordinator coord(producer, consumers);
-        coord.start();
+    // fill caches
+    for (int d = 1; d < 3; d++) {
+        std::vector<algorithm::Worker> workers(num_thread);
+        std::vector<std::thread> threads(num_thread-1);
+        for (int ii = 0; ii < num_thread; ii++) {
+            // TODO allow bitset counter here
+            auto calc = entropy_calc_ptr(new it::EntropyCalculator(variables,
+                        std::shared_ptr<it::VectorCounter>(
+                            new it::VectorCounter()), pimpl->shared_caches[d-1]));
+            workers[ii] = algorithm::Worker(ii, num_thread,
+                    algorithm::TupleSpace(nvar, d), calc, 0, entropy_measure);
+        }
+        for (int ii = 0; ii < num_thread-1; ii++)
+            threads[ii] = std::thread(&algorithm::Worker::start, workers[ii]);
+        workers.back().start();
+        for (auto& thread : threads)
+            thread.join();
     }
 
     pimpl->prev_cache_type = pimpl->cache_type;
@@ -392,6 +322,8 @@ void Search::compute() {
 
     int nvar = pimpl->data->n;
     int tuple_size = pimpl->tuple_size;
+    int num_thread = pimpl->no_thread;
+    auto variables = pimpl->data->variables();
 
     // initialize output file stream
     if (!pimpl->outfile.empty()) {
@@ -400,57 +332,30 @@ void Search::compute() {
         if (!pimpl->file_output)
             throw SearchException("compute", "Failed to create FileOutputStream from file '" + pimpl->outfile + "'");
     }
+    std::vector<algorithm::Worker> workers(num_thread);
+    std::vector<std::thread> threads(num_thread-1);
 
-    // Create shared caches
-    if (cacheInvalid()) {
-        pimpl->shared_caches.resize(pimpl->cache_dimensions);
-        pimpl->shared_caches[0] = cache_ptr(new cache::Flat<it::Entropy>(nvar, 1));
-        pimpl->shared_caches[1] = cache_ptr(new cache::Flat<it::Entropy>(nvar, 2));
+    // TODO when to use or not use the cache
+    primeCaches();
+
+    // Create Workers
+    for (int ii = 0; ii < num_thread; ii++) {
+        auto calc = entropy_calc_ptr(new it::EntropyCalculator(
+                    variables, std::shared_ptr<it::VectorCounter>(
+                        new it::VectorCounter()), pimpl->shared_caches));
+        auto outt = std::shared_ptr<io::OutputStream>(new io::FileOutputStream(
+                    *pimpl->file_output));
+        workers[ii] = algorithm::Worker(ii, num_thread,
+                        algorithm::TupleSpace(nvar, tuple_size),
+                        calc, outt, pimpl->measure);
     }
 
-    configureThreads();
+    // Start child ranks
+    for (int ii = 0; ii < num_thread - 1; ii++)
+        threads[ii] = std::thread(&algorithm::Worker::start, workers[ii]);
+    workers.back().start();
 
-    if (cacheInvalid()) {
-        primeCaches();
-    }
-
-    // Run algorithm for full tuple size
-    producer_ptr producer;
-    std::vector<consumer_ptr> consumers;
-
-    //producer
-    switch (pimpl->search_type) {
-        case search_types::exhaustive:
-            producer = producer_ptr(new algorithm::ExhaustiveTupleProducer(
-                        tuple_size, nvar, pimpl->tuple_algorithm));
-            break;
-        case search_types::tuplespace:
-            producer = producer_ptr(new algorithm::TupleSpaceTupleProducer(
-                        pimpl->tupleSpace, pimpl->tuple_algorithm));
-            break;
-    }
-
-    // consumer(s)
-    // all TupleProducers are capable of queuing in batch mode
-    if (pimpl->tuple_algorithm == algorithm::TupleProducer::algorithm::batch) {
-       for (auto const& thread : pimpl->threads)
-           consumers.push_back(consumer_ptr(new algorithm::BatchTupleConsumer(
-                           thread.calculator, thread.output_stream, thread.measure, pimpl->full_output)));
-    } else if (pimpl->tuple_algorithm == algorithm::TupleProducer::algorithm::completion) {
-        switch (pimpl->search_type) {
-            case search_types::exhaustive:
-                for (auto const& thread : pimpl->threads)
-                    consumers.push_back(consumer_ptr(new algorithm::ExhaustiveTupleConsumer(
-                                    thread.calculator, thread.output_stream, thread.measure, nvar, pimpl->full_output)));
-                break;
-            case search_types::tuplespace:
-                for (auto const& thread : pimpl->threads)
-                    consumers.push_back(consumer_ptr(new algorithm::TupleSpaceTupleConsumer(
-                                    thread.calculator, thread.output_stream, thread.measure, pimpl->tupleSpace, pimpl->full_output)));
-                break;
-        }
-    }
-
-    algorithm::Coordinator coord(producer, consumers);
-    coord.start();
+    // join other threads
+    for (auto& thread : threads)
+        thread.join();
 }

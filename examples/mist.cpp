@@ -121,7 +121,6 @@ int main(int argc, char *argv[]) {
         ("pd-algorithm", po::value(&param.pd_algorithm)->default_value(dparam.pd_algorithm), "Probabilty distribution counting algorithm")
         ("pd-cache", po::value(&param.pd_cache)->default_value(dparam.pd_cache), "Toggle probability distribution caching")
         ("threads,t", po::value(&param.num_threads)->default_value(dparam.num_threads), "Number of threads")
-        ("tuple-algorithm", po::value(&param.tuple_algorithm)->default_value(dparam.tuple_algorithm), "Thread work-sharing algorithm")
     ;
 
     // combine options groups
@@ -171,7 +170,6 @@ int main(int argc, char *argv[]) {
     //
     // Run computation
     //
-    mist.set_tuple_algorithm(param.tuple_algorithm);
     mist.set_probability_algorithm(param.pd_algorithm);
     mist.set_threads(param.num_threads);
     mist.set_tuple_size(param.tuple_size);
