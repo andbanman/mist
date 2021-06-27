@@ -35,14 +35,14 @@ void EntropyCalculator::init_caches(std::vector<cache_ptr_type> &caches) {
     if (num_caches >= 3) this->cache3d = caches[2];
 }
 
-Entropy EntropyCalculator::entropy_it_distribution(Distribution const& pd) {
-    Entropy entropy = 0.0;
+entropy_type EntropyCalculator::entropy_it_distribution(Distribution const& pd) {
+    entropy_type entropy = 0.0;
     for (auto& prob : pd)
         entropy = (prob) ? entropy + prob * std::log2(prob) : entropy;
     return (entropy) ? -entropy : entropy;
 };
 
-Entropy EntropyCalculator::entropy_cache(tuple_type const& tuple, cache_ptr_type &cache) {
+entropy_type EntropyCalculator::entropy_cache(tuple_type const& tuple, cache_ptr_type &cache) {
     Distribution dist;
     if (cache) {
         try {
@@ -65,7 +65,7 @@ Entropy EntropyCalculator::entropy_cache(tuple_type const& tuple, cache_ptr_type
     }
 }
 
-Entropy EntropyCalculator::entropy(tuple_type const& tuple) {
+entropy_type EntropyCalculator::entropy(tuple_type const& tuple) {
     if (this->cache) {
         // unified cache
         return entropy_cache(tuple, this->cache);

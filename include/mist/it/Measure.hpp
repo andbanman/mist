@@ -25,12 +25,11 @@ public:
     virtual result_type compute(EntropyCalculator &ecalc, Variable::indexes const& tuple) const = 0;
 
     /**
-     * Compute the information theory measure with the EntropyCalculator for
-     * the given variables, re-using intermdiate results for all variables
-     * except the last Variable. The result struct is completed with new
-     * ecalculations.
+     * Compute the information theory measure with the the given variables,
+     * using pre-computed entropies. Only useful for measures that use entropy
+     * sub calculations.
      */
-    virtual void recomputeLastIndex(EntropyCalculator &ecalc, Variable::indexes const& tuple, result_type & sub) const = 0;
+    virtual result_type compute(EntropyCalculator &ecalc, Variable::indexes const& tuple, Entropy const& entropy) const = 0;
 
     /**
      * Return a comma-separated header string corresponding to the full results
