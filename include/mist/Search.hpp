@@ -167,6 +167,7 @@ public:
      */
     void compute();
 
+#if 0
 #if BOOST_PYTHON_EXTENSIONS
     /** Return computation results in a Python Numpy.ndarray.
      *
@@ -182,6 +183,7 @@ public:
      * @see set_outfile
      */
     io::MapOutputStream::map_type get_results();
+#endif
 
     /** Print cache statistics for each cache in each thread to stdout.
      */

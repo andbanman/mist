@@ -169,6 +169,7 @@ void Search::set_outfile(std::string const& filename) {
     pimpl->outfile = filename;
 }
 
+#if 0
 #if BOOST_PYTHON_EXTENSIONS
 //
 // Returns python numpy ndarray of variable indexes with the result set
@@ -234,6 +235,7 @@ io::MapOutputStream::map_type Search::get_results() {
     }
     return ret;
 }
+#endif
 
 void Search::set_tuple_size(int size) {
     if (size < 2 || size > 3)
