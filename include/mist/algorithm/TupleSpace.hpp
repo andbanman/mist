@@ -21,6 +21,7 @@ class TupleSpace {
 public:
     using tuple_type = Variable::indexes;
     TupleSpace();
+    TupleSpace(int N, int d);
     ~TupleSpace();
     /** Define a named logical group of variables
      * @param name group name
@@ -55,6 +56,7 @@ public:
     /** Set variable names
      */
     void set_names(std::vector<std::string> const& names);
+    int tupleSize() const;
 
 #if BOOST_PYTHON_EXTENSIONS
     int pyAddVariableGroup(std::string const& name, p::list const& list);
@@ -77,6 +79,7 @@ private:
     std::vector<tuple_type> variableGroupTuples;
     // keep track of seen variables to detect duplicates
     std::set<int> seen_vars;
+    int tuple_size = 0;
 };
 
 class TupleSpaceException : public std::exception {
