@@ -64,7 +64,7 @@ add_custom_command(OUTPUT ${include_path}/Version.hpp
 add_object(Permutation Permutation.cpp ${include_path}/Permutation.hpp)
 add_object(Variable Variable.cpp)
 add_object(Version Version.cpp ${include_path}/Version.hpp)
-add_object(Mist Mist.cpp ${include_path}/Mist.hpp ${include_path}/mist.hpp ${include_path}/Version.hpp)
+add_object(Search Search.cpp ${include_path}/Search.hpp ${include_path}/mist.hpp ${include_path}/Version.hpp)
 
 # Namespaces
 add_subdirectory(algorithm)
@@ -82,7 +82,7 @@ else()
 endif()
 
 set(library_objects
-    $<TARGET_OBJECTS:Mist>
+    $<TARGET_OBJECTS:Search>
     $<TARGET_OBJECTS:Permutation>
     $<TARGET_OBJECTS:Variable>
     $<TARGET_OBJECTS:Version>

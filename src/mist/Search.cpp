@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "Mist.hpp"
+#include "Search.hpp"
 #include "algorithm/TupleProducer.hpp"
 
 using namespace mist;
@@ -19,7 +19,7 @@ using entropy_calc_ptr  = std::shared_ptr<it::EntropyCalculator>;
 using producer_ptr      = std::shared_ptr<algorithm::TupleProducer>;
 using consumer_ptr      = std::shared_ptr<algorithm::TupleConsumer>;
 
-std::string Mist::version() {
+std::string Search::version() {
     return MIST_VERSION;
 }
 
@@ -46,7 +46,7 @@ struct thread_config {
     entropy_calc_ptr calculator;
 };
 
-struct Mist::impl {
+struct Search::impl {
     // structures
     data_ptr data;
     file_stream_ptr file_output;
@@ -75,7 +75,7 @@ struct Mist::impl {
     std::size_t prev_cache_memory_size = 0;
 };
 
-Mist::Mist() : pimpl(std::make_unique<impl>()) {
+Search::Search() : pimpl(std::make_unique<impl>()) {
     // structures
     pimpl->measure = measure_ptr(new it::SymmetricDelta());
     pimpl->data = 0;
@@ -88,15 +88,15 @@ Mist::Mist() : pimpl(std::make_unique<impl>()) {
     pimpl->cache_type = cache_types::memory;
 };
 
-Mist::Mist(const Mist& other) : pimpl(std::make_unique<impl>()) {
+Search::Search(const Search& other) : pimpl(std::make_unique<impl>()) {
     *this->pimpl = *other.pimpl;
 };
 
-Mist::Mist(Mist&&) = default;
-Mist& Mist::operator=(Mist&&) = default;
-Mist::~Mist() {}
+Search::Search(Search&&) = default;
+Search& Search::operator=(Search&&) = default;
+Search::~Search() {}
 
-void Mist::set_measure(std::string const& measure) {
+void Search::set_measure(std::string const& measure) {
     std::string test(measure);
     transform(test.begin(), test.end(), test.begin(), ::tolower);
 
@@ -105,10 +105,10 @@ void Mist::set_measure(std::string const& measure) {
     else if (test == "entropy")
         pimpl->measure = measure_ptr(new it::EntropyMeasure());
     else
-        throw MistException("set_measure", "Invalid measure: " + measure + ", allowed: [SymmetricDelta,Entropy]");
+        throw SearchException("set_measure", "Invalid measure: " + measure + ", allowed: [SymmetricDelta,Entropy]");
 }
 
-void Mist::set_search_type(std::string const& search_type) {
+void Search::set_search_type(std::string const& search_type) {
     std::string test(search_type);
     transform(test.begin(), test.end(), test.begin(), ::tolower);
 
@@ -117,10 +117,10 @@ void Mist::set_search_type(std::string const& search_type) {
     else if (test == "tuplespace")
         pimpl->search_type = search_types::tuplespace;
     else
-        throw MistException("set_search_type", "Invalid search space : " + search_type + ", allowed: [Exhaustive, TupleSpace]");
+        throw SearchException("set_search_type", "Invalid search space : " + search_type + ", allowed: [Exhaustive, TupleSpace]");
 }
 
-void Mist::set_tuple_algorithm(std::string const& tuple_algorithm) {
+void Search::set_tuple_algorithm(std::string const& tuple_algorithm) {
     std::string test(tuple_algorithm);
     transform(test.begin(), test.end(), test.begin(), ::tolower);
 
@@ -129,10 +129,10 @@ void Mist::set_tuple_algorithm(std::string const& tuple_algorithm) {
     else if (test == "batch")
         pimpl->tuple_algorithm = algorithm::TupleProducer::algorithm::batch;
     else
-        throw MistException("set_tuple_algorithm", "Invalid tuple algorithm: " + tuple_algorithm + ", allowed: [Completion, Batch]");
+        throw SearchException("set_tuple_algorithm", "Invalid tuple algorithm: " + tuple_algorithm + ", allowed: [Completion, Batch]");
 }
 
-void Mist::set_probability_algorithm(std::string const& algorithm) {
+void Search::set_probability_algorithm(std::string const& algorithm) {
     std::string test(algorithm);
     transform(test.begin(), test.end(), test.begin(), ::tolower);
 
@@ -141,13 +141,13 @@ void Mist::set_probability_algorithm(std::string const& algorithm) {
     else if (test == "vector")
         pimpl->probability_algorithm = probability_algorithms::vector;
     else
-        throw MistException("set_probability_algorithm", "Invalid probability algorithm : " + algorithm + ", allowed: [bitset, vector]");
+        throw SearchException("set_probability_algorithm", "Invalid probability algorithm : " + algorithm + ", allowed: [bitset, vector]");
 }
 
 #if 0
 //TODO: not implemented
-void Mist::set_cache_files_root(std::string const& directory) {
-    throw MistException("set_cache_files", "Not yet implemented.");
+void Search::set_cache_files_root(std::string const& directory) {
+    throw SearchException("set_cache_files", "Not yet implemented.");
     pimpl->cache_type = cache_types::small_files;
     pimpl->cache_files_root = directory;
     // TODO validate directory
@@ -156,14 +156,14 @@ void Mist::set_cache_files_root(std::string const& directory) {
 
 #if 0
 //TODO: not implemented
-void Mist::set_cache_memory(std::size_t size) {
-    throw MistException("set_cache_memory", "Not yet implemented.");
+void Search::set_cache_memory(std::size_t size) {
+    throw SearchException("set_cache_memory", "Not yet implemented.");
     pimpl->cache_type = cache_types::memory;
     pimpl->cache_memory_size = size;
 }
 #endif
 
-void Mist::set_outfile(std::string const& filename) {
+void Search::set_outfile(std::string const& filename) {
     // Thread copies of FileOutputStream should be constructed from
     // this object so they share an underlying file stream
     pimpl->outfile = filename;
@@ -173,14 +173,14 @@ void Mist::set_outfile(std::string const& filename) {
 //
 // Returns python numpy ndarray of variable indexes with the result set
 //
-np::ndarray Mist::python_get_results() {
+np::ndarray Search::python_get_results() {
     if (pimpl->file_output)
-        throw MistException("python_get_results", "Results stored in output file '" + pimpl->file_output->get_filename() + "', not in memory");
+        throw SearchException("python_get_results", "Results stored in output file '" + pimpl->file_output->get_filename() + "', not in memory");
 
     // infer results dimensions
     auto ptr = dynamic_cast<io::MapOutputStream*>(pimpl->threads.front().output_stream.get());
     if (!ptr)
-        throw MistException("python_get_results", "Failed to cast output stream to MapOutputStream");
+        throw SearchException("python_get_results", "Failed to cast output stream to MapOutputStream");
     auto& results = ptr->get_results();
     int num_variables = results.begin()->first.size();
     int num_results = results.begin()->second.size();
@@ -220,56 +220,56 @@ np::ndarray Mist::python_get_results() {
 
 // TODO test this
 // Returns a copy of the results collected into one data structure
-io::MapOutputStream::map_type Mist::get_results() {
+io::MapOutputStream::map_type Search::get_results() {
     if (pimpl->file_output)
-        throw MistException("get_results", "Results stored in output file '" + pimpl->file_output->get_filename() + "', not in memory");
+        throw SearchException("get_results", "Results stored in output file '" + pimpl->file_output->get_filename() + "', not in memory");
 
     io::MapOutputStream::map_type ret;
     for (auto& thread : pimpl->threads) {
         auto ptr = dynamic_cast<io::MapOutputStream*>(thread.output_stream.get());
         if (!ptr)
-            throw MistException("get_results", "Failed to cast output stream to MapOutputStream");
+            throw SearchException("get_results", "Failed to cast output stream to MapOutputStream");
         auto& results = ptr->get_results();
         ret.insert(results.begin(), results.end());
     }
     return ret;
 }
 
-void Mist::set_tuple_size(int size) {
+void Search::set_tuple_size(int size) {
     if (size < 2 || size > 3)
-        throw MistException("set_tuple_size", "Invalid tuple size " + std::to_string(size) + ", valid range is [2,3]");
+        throw SearchException("set_tuple_size", "Invalid tuple size " + std::to_string(size) + ", valid range is [2,3]");
     pimpl->tuple_size = size;
 }
 
-void Mist::set_tuple_space(algorithm::TupleSpace const& ts) {
+void Search::set_tuple_space(algorithm::TupleSpace const& ts) {
     pimpl->tupleSpace = ts;
     pimpl->search_type = search_types::tuplespace;
 }
 
-void Mist::set_threads(int threads) { pimpl->no_thread = threads; }
-void Mist::enable_cache_d1() { pimpl->cache_d1_enabled = true; };
-void Mist::enable_cache_d2() { pimpl->cache_d2_enabled = true; };
-void Mist::disable_cache_d1() { pimpl->cache_d1_enabled = false; };
-void Mist::disable_cache_d2() { pimpl->cache_d2_enabled = false; };
-void Mist::full_output() { pimpl->full_output = true; };
+void Search::set_threads(int threads) { pimpl->no_thread = threads; }
+void Search::enable_cache_d1() { pimpl->cache_d1_enabled = true; };
+void Search::enable_cache_d2() { pimpl->cache_d2_enabled = true; };
+void Search::disable_cache_d1() { pimpl->cache_d1_enabled = false; };
+void Search::disable_cache_d2() { pimpl->cache_d2_enabled = false; };
+void Search::full_output() { pimpl->full_output = true; };
 
-void Mist::load_file(std::string const& filename) {
+void Search::load_file(std::string const& filename) {
     // TODO invalidate previous results
     pimpl->data = data_ptr(new io::DataMatrix(filename));
     if (!pimpl->data)
-        throw MistException("load_file", "Failed to create DataMatrix from file '" + filename + "'");
+        throw SearchException("load_file", "Failed to create DataMatrix from file '" + filename + "'");
 }
 
 #if BOOST_PYTHON_EXTENSIONS
-void Mist::load_ndarray(np::ndarray const& np) {
+void Search::load_ndarray(np::ndarray const& np) {
     // TODO invalidate previous results
     pimpl->data = data_ptr(new io::DataMatrix(np));
     if (!pimpl->data)
-        throw MistException("load_ndarray", "Failed to create DataMatrix from ndarray");
+        throw SearchException("load_ndarray", "Failed to create DataMatrix from ndarray");
 }
 #endif
 
-void Mist::printCacheStats() {
+void Search::printCacheStats() {
     int thread_no = 0;
     for (auto const& thread : pimpl->threads) {
         int cache_no = 1;
@@ -290,14 +290,14 @@ void Mist::printCacheStats() {
     }
 }
 
-bool Mist::cacheInvalid() {
+bool Search::cacheInvalid() {
     return (
             pimpl->cache_type != pimpl->prev_cache_type ||
             pimpl->cache_memory_size != pimpl->prev_cache_memory_size
            );
 }
 
-void Mist::configureThreads() {
+void Search::configureThreads() {
     int nvar = pimpl->data->n;
     int tuple_size = pimpl->tuple_size;
     //TODO: threaded 1 producer and 1 consumer not possible, see Coordinator.cpp
@@ -343,7 +343,7 @@ void Mist::configureThreads() {
     }
 }
 
-void Mist::primeCaches() {
+void Search::primeCaches() {
     auto entropy_measure = measure_ptr(new it::EntropyMeasure());
     int nvar = pimpl->data->n;
 
@@ -381,12 +381,12 @@ void Mist::primeCaches() {
 //
 // Run full algoirithm as configured
 //
-void Mist::compute() {
+void Search::compute() {
     // sanity checks
     if (!pimpl->data)
-        throw MistException("compute", "No data loaded, use load_file or load_ndarray.");
+        throw SearchException("compute", "No data loaded, use load_file or load_ndarray.");
     if (!pimpl->measure)
-        throw MistException("compute", "No IT Measure selected, use set_measure.");
+        throw SearchException("compute", "No IT Measure selected, use set_measure.");
 
     int nvar = pimpl->data->n;
     int tuple_size = pimpl->tuple_size;
@@ -396,7 +396,7 @@ void Mist::compute() {
         auto header = pimpl->measure->header(tuple_size, pimpl->full_output);
         pimpl->file_output = file_stream_ptr(new io::FileOutputStream(pimpl->outfile, header));
         if (!pimpl->file_output)
-            throw MistException("compute", "Failed to create FileOutputStream from file '" + pimpl->outfile + "'");
+            throw SearchException("compute", "Failed to create FileOutputStream from file '" + pimpl->outfile + "'");
     }
 
     // Create shared caches

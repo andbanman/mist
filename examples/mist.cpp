@@ -8,7 +8,7 @@
 #include <boost/optional/optional_io.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "Mist.hpp"
+#include "Search.hpp"
 #include "yaml-cpp/yaml.h"
 
 const std::string config_help = "The config file passed with option -c accepts this YAML structure: \n\
@@ -48,7 +48,7 @@ void printVersion(std::string const& version) {
     std::cout << "Mist library version " << version << "\n";
 }
 
-void load_yml_config(std::string file, mist::Mist &mist) {
+void load_yml_config(std::string file, mist::Search &mist) {
     mist::algorithm::TupleSpace ts;
     YAML::Node config = YAML::LoadFile(file);
 
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
     bool debug = vm.count("debug");
     bool version = vm.count("version");
 
-    mist::Mist mist;
+    mist::Search mist;
 
     if (!param.configfile.empty()) {
         load_yml_config(param.configfile, mist);

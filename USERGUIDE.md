@@ -15,12 +15,12 @@ Select the measure you want to compute by name. Mist computes the measure for ea
 ::
 
     # Python syntax
-    mist = libmist.Mist()
+    mist = libmist.Search()
     mist.set_measure("SymmetricDelta")
     ...
     mist.compute()
 
-See the API documentation on Mist::set_measure for a list of supported measures and how to choose them. What measure will be most useful depends on the data and how the tuples are constructed.
+See the API documentation on Search::set_measure for a list of supported measures and how to choose them. What measure will be most useful depends on the data and how the tuples are constructed.
 
 TODO: feature to output all the subcalculations.
 TODO: header in the output
@@ -51,7 +51,7 @@ Next, specify one or more *Variable Group Tuples* to define the tuple space. The
     # 2,4
     # 3,4
 
-Finally, load the TupleSpace object into the Mist object to set the tuple space.
+Finally, load the TupleSpace object into the Search object to set the tuple space.
 
 ::
 

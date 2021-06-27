@@ -32,7 +32,7 @@ namespace mist {
  * with compute(). Maintains state in between runs, such as intermediate value
  * caches for improved performance.
  */
-class Mist {
+class Search {
 private:
     class impl;
     //std::experimental::propagate_const<std::unique_ptr<impl>> pimpl;
@@ -43,11 +43,11 @@ private:
     void configureThreads();
 
 public:
-    Mist();
-    Mist(Mist&&);
-    Mist(const Mist&);
-    Mist& operator=(Mist&&);
-    ~Mist();
+    Search();
+    Search(Search&&);
+    Search(const Search&);
+    Search& operator=(Search&&);
+    ~Search();
 
     //
     // Configuration toggles
@@ -71,7 +71,7 @@ public:
      *
      * - Exhaustive (default): include all unique combinations of variables in
      *   the tuple search space.
-     * - TupleSpace : include only tuples defined by algorithm::TupleSpace, see Mist::set_tuple_space.
+     * - TupleSpace : include only tuples defined by algorithm::TupleSpace, see Search::set_tuple_space.
      */
     void set_search_type(std::string const& search_type);
 
@@ -187,17 +187,17 @@ public:
      */
     void printCacheStats();
 
-    /** Return the Mist library Version string
+    /** Return the Search library Version string
      */
     std::string version();
 };
 
-class MistException : public std::exception {
+class SearchException : public std::exception {
 private:
     std::string msg;
 public:
-    MistException(std::string const& method, std::string const& msg) :
-        msg("Mist::" + method + " : " + msg) { }
+    SearchException(std::string const& method, std::string const& msg) :
+        msg("Search::" + method + " : " + msg) { }
     virtual const char* what() const throw() {
         return msg.c_str();
     };
