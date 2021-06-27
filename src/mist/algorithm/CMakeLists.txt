@@ -12,6 +12,7 @@ add_namespace_object(TupleSpace)
 add_namespace_object(TupleSpaceQueue)
 add_namespace_object(TupleSpaceTupleConsumer)
 add_namespace_object(TupleSpaceTupleProducer)
+add_namespace_object(Worker)
 
 set(algorithm_objects ${algorithm_objects} PARENT_SCOPE)
 
