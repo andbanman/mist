@@ -32,12 +32,11 @@ void
 Worker::processTuple(std::vector<int> const& tuple)
 {
   auto result = this->measure->compute(*this->calc, tuple);
-  if (this->out) {
+  for (auto& out : out_streams) {
     if (this->output_all) {
-      this->out->push(tuple, result);
+      out->push(tuple, result);
     } else {
-      this->out->push(tuple,
-                      it::Measure::result_type(result.end() - 1, result.end()));
+      out->push(tuple, it::Measure::result_type(result.end() - 1, result.end()));
     }
   }
 }
@@ -46,12 +45,11 @@ void
 Worker::processTuple(std::vector<int> const& tuple, it::Entropy const& e)
 {
   auto result = this->measure->compute(*this->calc, tuple, e);
-  if (this->out) {
+  for (auto& out : out_streams) {
     if (this->output_all) {
-      this->out->push(tuple, result);
+      out->push(tuple, result);
     } else {
-      this->out->push(tuple,
-                      it::Measure::result_type(result.end() - 1, result.end()));
+      out->push(tuple, it::Measure::result_type(result.end() - 1, result.end()));
     }
   }
 }
@@ -389,12 +387,12 @@ Worker::Worker(int rank,
                int ranks,
                TupleSpace const& ts,
                entropy_calc_ptr calc,
-               output_stream_ptr out,
+               std::vector<output_stream_ptr> out_streams,
                measure_ptr measure)
   : rank(rank)
   , ranks(ranks)
   , calc(calc)
-  , out(out)
+  , out_streams(out_streams)
   , measure(measure)
 {
   // cannot set these in member initialization list?
@@ -405,5 +403,10 @@ Worker::Worker(int rank,
   }
   if (group_tuples.empty()) {
     throw WorkerException("Worker", "TuplesSpace variable group tuples empty.");
+  }
+  for (auto& out : out_streams) {
+    if (!out) {
+      throw WorkerException("Worker", "Invalid output stream");
+    }
   }
 }

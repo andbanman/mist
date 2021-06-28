@@ -1,5 +1,6 @@
 #pragma once
 
+#include "io/MapOutputStream.hpp"
 #include <memory>
 #include <stdexcept>
 
@@ -121,6 +122,17 @@ public:
      * @pre Array is NxM matrix of the expected dtype and C memory layout.
      */
     void load_ndarray(np::ndarray const& np);
+
+    /** Return a Numpy ndarray copy of all results
+     */
+    np::ndarray python_get_results();
+
+    /** Start search.
+     *
+     * Compute the configured IT measure for all Variable tuples in the
+     * configured search space. And return up to tuple_limit number of results.
+     */
+    np::ndarray python_start();
 #endif
 
     /** Begin computation.
@@ -129,6 +141,10 @@ public:
      * configured search space.
      */
     void compute();
+
+    /** Return a copy of all results
+     */
+    io::MapOutputStream::map_type get_results();
 
     /** Print cache statistics for each cache in each thread to stdout.
      */

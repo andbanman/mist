@@ -32,7 +32,7 @@ public:
          int threads,
          TupleSpace const& ts,
          entropy_calc_ptr calc,
-         output_stream_ptr out,
+         std::vector<output_stream_ptr> out_streams,
          measure_ptr measure);
 
   void start();
@@ -42,7 +42,7 @@ public:
 private:
   TupleSpace ts;
   entropy_calc_ptr calc;
-  output_stream_ptr out;
+  std::vector<output_stream_ptr> out_streams;
   measure_ptr measure;
   groups_t groups;
   group_tuples_t group_tuples;

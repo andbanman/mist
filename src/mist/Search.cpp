@@ -9,6 +9,7 @@
 #include "Search.hpp"
 #include "algorithm/TupleSpace.hpp"
 #include "algorithm/Worker.hpp"
+#include "io/MapOutputStream.hpp"
 #include "it/BitsetCounter.hpp"
 #include "it/Entropy.hpp"
 #include "it/EntropyCalculator.hpp"
@@ -19,6 +20,7 @@ using namespace mist;
 using data_ptr          = std::shared_ptr<io::DataMatrix>;
 using output_stream_ptr = std::shared_ptr<io::OutputStream>;
 using file_stream_ptr   = std::shared_ptr<io::FileOutputStream>;
+using map_stream_ptr    = std::shared_ptr<io::MapOutputStream>;
 using measure_ptr       = std::shared_ptr<it::Measure>;
 using cache_ptr         = it::EntropyCalculator::cache_ptr_type;
 using entropy_calc_ptr  = std::shared_ptr<it::EntropyCalculator>;
@@ -45,11 +47,13 @@ struct Search::impl {
     file_stream_ptr file_output;
     measure_ptr measure;
     std::vector<cache_ptr> shared_caches;
+    std::vector<map_stream_ptr> mem_outputs;
     std::vector<thread_config> threads;
 
     // config
     bool use_cache = true;
     bool full_output = false;
+    bool in_memory_output = true;
     int no_thread;
     int tuple_size;
     probability_algorithms probability_algorithm;
@@ -108,31 +112,27 @@ void Search::set_outfile(std::string const& filename) {
     // Thread copies of FileOutputStream should be constructed from
     // this object so they share an underlying file stream
     pimpl->outfile = filename;
+    pimpl->in_memory_output = false;
 }
 
-#if 0
 #if BOOST_PYTHON_EXTENSIONS
 //
 // Returns python numpy ndarray of variable indexes with the result set
 //
 np::ndarray Search::python_get_results() {
-    if (pimpl->file_output)
-        throw SearchException("python_get_results", "Results stored in output file '" + pimpl->file_output->get_filename() + "', not in memory");
+    if (pimpl->mem_outputs.empty()) {
+        return np::zeros(p::make_tuple(0,0), np::dtype::get_builtin<double>());
+    }
 
     // infer results dimensions
-    auto ptr = dynamic_cast<io::MapOutputStream*>(pimpl->threads.front().output_stream.get());
-    if (!ptr)
-        throw SearchException("python_get_results", "Failed to cast output stream to MapOutputStream");
-    auto& results = ptr->get_results();
-    int num_variables = results.begin()->first.size();
-    int num_results = results.begin()->second.size();
+    auto a_result = pimpl->mem_outputs.front()->get_results().begin();
+    int num_variables = a_result->first.size();
+    int num_results   = a_result->second.size();
 
     // determine number of tuples collected in the output streams
-    int num_tuples = 0;
-    for (auto& thread : pimpl->threads) {
-        auto ptr = dynamic_cast<io::MapOutputStream*>(thread.output_stream.get());
-        auto& results = ptr->get_results();
-        num_tuples += results.size();
+    long num_tuples = 0;
+    for (auto& ptr: pimpl->mem_outputs) {
+        num_tuples += ptr->get_results().size();
     }
 
     // initialize the output ndarray
@@ -141,10 +141,8 @@ np::ndarray Search::python_get_results() {
 
     // copy results into output ndarray
     int ii = 0;
-    for (auto& thread : pimpl->threads) {
-        auto ptr = dynamic_cast<io::MapOutputStream*>(thread.output_stream.get());
+    for (auto& ptr: pimpl->mem_outputs) {
         auto& results = ptr->get_results();
-
         for (auto& item : results) {
             // fill in variable index tuple
             for (int jj = 0; jj < num_variables; jj++)
@@ -160,23 +158,18 @@ np::ndarray Search::python_get_results() {
 }
 #endif
 
-// TODO test this
 // Returns a copy of the results collected into one data structure
 io::MapOutputStream::map_type Search::get_results() {
-    if (pimpl->file_output)
-        throw SearchException("get_results", "Results stored in output file '" + pimpl->file_output->get_filename() + "', not in memory");
-
     io::MapOutputStream::map_type ret;
-    for (auto& thread : pimpl->threads) {
-        auto ptr = dynamic_cast<io::MapOutputStream*>(thread.output_stream.get());
-        if (!ptr)
-            throw SearchException("get_results", "Failed to cast output stream to MapOutputStream");
+    if (pimpl->mem_outputs.empty()) {
+        return ret;
+    }
+    for (auto& ptr : pimpl->mem_outputs) {
         auto& results = ptr->get_results();
         ret.insert(results.begin(), results.end());
     }
     return ret;
 }
-#endif
 
 void Search::set_tuple_size(int size) {
     if (size < 2 || size > 3)
@@ -274,7 +267,7 @@ void Search::init_caches() {
                                     caches);
 
         for (int ii = 0; ii < num_thread; ii++) {
-            workers[ii] = algorithm::Worker(ii, num_thread, ts, calc, 0,
+            workers[ii] = algorithm::Worker(ii, num_thread, ts, calc, {},
                                             entropy_measure);
         }
         for (int ii = 0; ii < num_thread-1; ii++) {
@@ -319,16 +312,29 @@ void Search::compute() {
         init_caches();
     }
 
+    if (pimpl->in_memory_output) {
+        pimpl->mem_outputs.clear();
+        pimpl->mem_outputs.resize(num_thread);
+    }
     std::vector<algorithm::Worker> workers(num_thread);
     std::vector<std::thread> threads(num_thread-1);
     auto calc = makeEntropyCalc(pimpl->probability_algorithm, variables,
                                 pimpl->shared_caches);
     // Create Workers
     for (int ii = 0; ii < num_thread; ii++) {
-        auto outt = std::shared_ptr<io::OutputStream>(new io::FileOutputStream(
-                                                      *pimpl->file_output));
+        // Configure output streams. Each worker gets separate output streams
+        // to avoid collision (single stream coordinated by mutex is too slow).
+        std::vector<output_stream_ptr> out_streams;
+        if (pimpl->in_memory_output) {
+            pimpl->mem_outputs[ii] = map_stream_ptr(new io::MapOutputStream());
+            out_streams.push_back(pimpl->mem_outputs[ii]);
+        }
+        if (pimpl->file_output) {
+            out_streams.push_back(std::shared_ptr<io::OutputStream>(
+                        new io::FileOutputStream(*pimpl->file_output)));
+        }
         workers[ii] = algorithm::Worker(ii, num_thread, pimpl->tupleSpace, calc,
-                                        outt, pimpl->measure);
+                                        out_streams, pimpl->measure);
         workers[ii].output_all = pimpl->full_output;
     }
 
@@ -340,4 +346,17 @@ void Search::compute() {
     // join other threads
     for (auto& thread : threads)
         thread.join();
+
+    // cleanup output file stream
+    pimpl->in_memory_output = true;
+    pimpl->file_output = 0;
+    pimpl->outfile = "";
 }
+
+#if BOOST_PYTHON_EXTENSIONS
+np::ndarray Search::python_start()
+{
+    compute();
+    return python_get_results();
+}
+#endif
