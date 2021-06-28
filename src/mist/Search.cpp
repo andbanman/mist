@@ -372,6 +372,7 @@ void Search::compute() {
                                                       *pimpl->file_output));
         workers[ii] = algorithm::Worker(ii, num_thread, pimpl->tupleSpace, calc,
                                         outt, pimpl->measure);
+        workers[ii].output_all = pimpl->full_output;
     }
 
     // Start child ranks

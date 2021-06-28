@@ -37,6 +37,8 @@ public:
 
   void start();
 
+  bool output_all = false;
+
 private:
   TupleSpace ts;
   entropy_calc_ptr calc;
@@ -46,7 +48,6 @@ private:
   group_tuples_t group_tuples;
   int rank;
   int ranks; // total number of ranks
-  bool output_all = false;
 
   void processTuple(std::vector<int> const& tuple);
   void processTuple(std::vector<int> const& tuple, it::Entropy const& e);
