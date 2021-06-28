@@ -46,6 +46,7 @@ struct Search::impl {
     data_ptr data;
     file_stream_ptr file_output;
     measure_ptr measure;
+    std::string measure_str;
     std::vector<cache_ptr> shared_caches;
     std::vector<map_stream_ptr> mem_outputs;
     std::vector<thread_config> threads;
@@ -58,19 +59,22 @@ struct Search::impl {
     int no_thread;
     int tuple_size;
     probability_algorithms probability_algorithm;
+    std::string probability_algorithm_str;
     std::string outfile;
-    algorithm::TupleSpace tupleSpace;
+    algorithm::TupleSpace tuple_space;
 };
 
 Search::Search() : pimpl(std::make_unique<impl>()) {
     // structures
     pimpl->measure = measure_ptr(new it::SymmetricDelta());
+    pimpl->measure_str = "SymmetricDelta";
     pimpl->data = 0;
 
     // default config
     pimpl->no_thread = std::thread::hardware_concurrency();
     pimpl->tuple_size = 2;
     pimpl->probability_algorithm = probability_algorithms::vector;
+    pimpl->probability_algorithm_str = "Vector"; // TODO enumerate elswhere
 };
 
 Search::Search(const Search& other) : pimpl(std::make_unique<impl>()) {
@@ -87,9 +91,11 @@ void Search::set_measure(std::string const& measure) {
 
     if (test == "symmetricdelta") {
         pimpl->measure = measure_ptr(new it::SymmetricDelta());
+        pimpl->measure_str = "SymmetricDelta";
     }
     else if (test == "entropy") {
         pimpl->measure = measure_ptr(new it::EntropyMeasure());
+        pimpl->measure_str = "JointEntropy";
     }
     else {
         throw SearchException("set_measure", "Invalid measure: " + measure +
@@ -97,17 +103,24 @@ void Search::set_measure(std::string const& measure) {
     }
 }
 
+std::string Search::get_measure() { return pimpl->measure_str; }
+
 void Search::set_probability_algorithm(std::string const& algorithm) {
     std::string test(algorithm);
     transform(test.begin(), test.end(), test.begin(), ::tolower);
 
-    if (test == "bitset")
+    if (test == "bitset") {
         pimpl->probability_algorithm = probability_algorithms::bitset;
-    else if (test == "vector")
+        pimpl->probability_algorithm_str = "Bitset";
+    }
+    else if (test == "vector") {
         pimpl->probability_algorithm = probability_algorithms::vector;
+        pimpl->probability_algorithm_str = "Vector";
+    }
     else
         throw SearchException("set_probability_algorithm", "Invalid probability algorithm : " + algorithm + ", allowed: [bitset, vector]");
 }
+std::string Search::get_probability_algorithm() { return pimpl->probability_algorithm_str; }
 
 void Search::set_outfile(std::string const& filename) {
     // Thread copies of FileOutputStream should be constructed from
@@ -115,6 +128,7 @@ void Search::set_outfile(std::string const& filename) {
     pimpl->outfile = filename;
     pimpl->in_memory_output = false;
 }
+std::string Search::get_outfile() { return pimpl->outfile; }
 
 #if BOOST_PYTHON_EXTENSIONS
 //
@@ -177,18 +191,22 @@ void Search::set_tuple_size(int size) {
         throw SearchException("set_tuple_size", "Invalid tuple size " + std::to_string(size) + ", valid range is [2,3]");
     pimpl->tuple_size = size;
 }
+int Search::get_tuple_size() { return pimpl->tuple_size; }
 
 void Search::set_tuple_space(algorithm::TupleSpace const& ts) {
-    pimpl->tupleSpace = ts;
+    pimpl->tuple_space = ts;
     pimpl->tuple_size = ts.tupleSize();
 }
+algorithm::TupleSpace Search::get_tuple_space() { return pimpl->tuple_space; }
 
-void Search::set_tuple_limit(long limit) {
-    pimpl->tuple_limit = limit;
-}
+void Search::set_tuple_limit(long limit) { pimpl->tuple_limit = limit; }
+long Search::get_tuple_limit() { return pimpl->tuple_limit; }
 
 void Search::set_threads(int threads) { pimpl->no_thread = threads; }
-void Search::full_output() { pimpl->full_output = true; };
+int Search::get_threads() { return pimpl->no_thread; }
+
+void Search::set_output_intermediate(bool full) { pimpl->full_output = full; }
+bool Search::get_output_intermediate() { return pimpl->full_output; }
 
 void Search::load_file(std::string const& filename) {
     // TODO invalidate previous results
@@ -300,8 +318,8 @@ void Search::compute() {
     auto variables = pimpl->data->variables();
 
     // load default tuplespace if one has not been set yet
-    if (!pimpl->tupleSpace.tupleSize()) {
-        pimpl->tupleSpace = algorithm::TupleSpace(nvar, tuple_size);
+    if (!pimpl->tuple_space.tupleSize()) {
+        pimpl->tuple_space = algorithm::TupleSpace(nvar, tuple_size);
     }
 
     // initialize output file stream
@@ -339,7 +357,7 @@ void Search::compute() {
                         new io::FileOutputStream(*pimpl->file_output)));
         }
         workers[ii] = algorithm::Worker(ii, num_thread, pimpl->tuple_limit,
-                                        pimpl->tupleSpace, calc, out_streams,
+                                        pimpl->tuple_space, calc, out_streams,
                                         pimpl->measure);
         workers[ii].output_all = pimpl->full_output;
     }

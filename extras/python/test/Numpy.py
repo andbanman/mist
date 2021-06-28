@@ -15,8 +15,8 @@ def load_column_order_numpy(filename):
 def test_compute_in_file_out_numpy():
     mist = pld.Search()
     mist.load_file(filename)
-    mist.set_threads(4)
-    mist.set_tuple_size(2)
+    mist.threads = 4
+    mist.tuple_size = 2
     res = mist.start()
     res2 = np.sort(res, axis=0)
     print(res2)
@@ -33,8 +33,8 @@ def test_compute_in_numpy_out_numpy():
     mist = pld.Search()
     x = load_column_order_numpy(filename)
     mist.load_ndarray(x)
-    mist.set_threads(4)
-    mist.set_tuple_size(2)
+    mist.threads = 4
+    mist.tuple_size = 2
     res = mist.start()
     res2 = np.sort(res, axis=0)
     print(res2)

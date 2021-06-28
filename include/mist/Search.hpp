@@ -59,6 +59,7 @@ public:
      *   information. See Sakhanenko, Galas in the literature.
      */
     void set_measure(std::string const& measure);
+    std::string get_measure();
 
     /** Set the algorithm for generating probability distributions.
      *
@@ -75,10 +76,12 @@ public:
      * generation dominates the computation.
      */
     void set_probability_algorithm(std::string const& algorithm);
+    std::string get_probability_algorithm();
 
     /** Set output CSV file.
      */
     void set_outfile(std::string const& filename);
+    std::string get_outfile();
 
     /** Set number of concurrent threads.
      *
@@ -87,10 +90,12 @@ public:
      * greatest effect on runtime.
      */
     void set_threads(int num_consumers);
+    int get_threads();
 
     /** Set the number of Variables to include in each IT measure computation.
      */
     void set_tuple_size(int size);
+    int get_tuple_size();
 
     /** Set the custom tuple space for the next computation
      *
@@ -98,15 +103,18 @@ public:
      * space becomes effective immediately.
      */
     void set_tuple_space(algorithm::TupleSpace const& ts);
+    algorithm::TupleSpace get_tuple_space();
 
     /** Set the maximum number of tuples to process. The default it 0, meaning
      * unlimited.
      */
     void set_tuple_limit(long limit);
+    long get_tuple_limit();
 
     /** Include all subcalculations in the output
      */
-    void full_output();
+    void set_output_intermediate(bool);
+    bool get_output_intermediate();
 
     /** Load Data from CSV or tab-separated file.
      *

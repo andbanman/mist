@@ -37,18 +37,23 @@ BOOST_PYTHON_MODULE(libmist)
     ;
 
     p::class_<Search>("Search")
+        .add_property("measure", &Search::get_measure, &Search::set_measure)
+        .add_property("probability_algorithm", &Search::get_probability_algorithm,
+                                               &Search::set_probability_algorithm)
+        .add_property("outfile", &Search::get_outfile, &Search::set_outfile)
+        .add_property("output_intermediate", &Search::get_output_intermediate,
+                                             &Search::set_output_intermediate)
+        .add_property("threads", &Search::get_threads, &Search::set_threads)
+        .add_property("tuple_limit", &Search::get_tuple_limit,
+                                     &Search::set_tuple_limit)
+        .add_property("tuple_size", &Search::get_tuple_size,
+                                    &Search::set_tuple_size)
+        .add_property("tuple_space", &Search::get_tuple_space,
+                                    &Search::set_tuple_space)
+        .def("compute", &Search::compute)
         .def("load_ndarray", &Search::load_ndarray)
         .def("load_file", &Search::load_file)
-        .def("set_outfile", &Search::set_outfile)
         .def("start", &Search::python_start)
-        .def("compute", &Search::compute)
-        .def("set_measure", &Search::set_measure)
-        .def("set_threads", &Search::set_threads)
-        .def("set_tuple_size", &Search::set_tuple_size)
-        .def("set_tuple_space", &Search::set_tuple_space)
-        .def("set_tuple_limit", &Search::set_tuple_limit)
-        .def("set_probability_algorithm", &Search::set_probability_algorithm)
-        .def("full_output", &Search::full_output)
         .def("version", &Search::version)
     ;
 }
