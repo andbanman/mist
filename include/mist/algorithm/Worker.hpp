@@ -30,6 +30,7 @@ public:
   Worker();
   Worker(int rank,
          int threads,
+         long limit,
          TupleSpace const& ts,
          entropy_calc_ptr calc,
          std::vector<output_stream_ptr> out_streams,
@@ -48,6 +49,7 @@ private:
   group_tuples_t group_tuples;
   int rank;
   int ranks; // total number of ranks
+  long limit; // maximum number of tuples to process
 
   void processTuple(std::vector<int> const& tuple);
   void processTuple(std::vector<int> const& tuple, it::Entropy const& e);

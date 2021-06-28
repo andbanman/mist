@@ -345,7 +345,7 @@ Worker::search_d3(long start, long stop, bool full)
 void
 Worker::start()
 {
-  int total = countTuples(groupSizes(groups), group_tuples);
+  int total = (limit) ? limit : countTuples(groupSizes(groups), group_tuples);
   int step = (total + this->ranks - 1) / this->ranks; // round up
   int start = step * (this->rank);
   int stop = start + step;
@@ -385,12 +385,14 @@ Worker::Worker() {}
 
 Worker::Worker(int rank,
                int ranks,
+               long limit,
                TupleSpace const& ts,
                entropy_calc_ptr calc,
                std::vector<output_stream_ptr> out_streams,
                measure_ptr measure)
   : rank(rank)
   , ranks(ranks)
+  , limit(limit)
   , calc(calc)
   , out_streams(out_streams)
   , measure(measure)

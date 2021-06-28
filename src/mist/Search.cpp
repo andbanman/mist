@@ -51,6 +51,7 @@ struct Search::impl {
     std::vector<thread_config> threads;
 
     // config
+    long tuple_limit = 0;
     bool use_cache = true;
     bool full_output = false;
     bool in_memory_output = true;
@@ -182,6 +183,10 @@ void Search::set_tuple_space(algorithm::TupleSpace const& ts) {
     pimpl->tuple_size = ts.tupleSize();
 }
 
+void Search::set_tuple_limit(long limit) {
+    pimpl->tuple_limit = limit;
+}
+
 void Search::set_threads(int threads) { pimpl->no_thread = threads; }
 void Search::full_output() { pimpl->full_output = true; };
 
@@ -267,7 +272,7 @@ void Search::init_caches() {
                                     caches);
 
         for (int ii = 0; ii < num_thread; ii++) {
-            workers[ii] = algorithm::Worker(ii, num_thread, ts, calc, {},
+            workers[ii] = algorithm::Worker(ii, num_thread, 0, ts, calc, {},
                                             entropy_measure);
         }
         for (int ii = 0; ii < num_thread-1; ii++) {
@@ -333,8 +338,9 @@ void Search::compute() {
             out_streams.push_back(std::shared_ptr<io::OutputStream>(
                         new io::FileOutputStream(*pimpl->file_output)));
         }
-        workers[ii] = algorithm::Worker(ii, num_thread, pimpl->tupleSpace, calc,
-                                        out_streams, pimpl->measure);
+        workers[ii] = algorithm::Worker(ii, num_thread, pimpl->tuple_limit,
+                                        pimpl->tupleSpace, calc, out_streams,
+                                        pimpl->measure);
         workers[ii].output_all = pimpl->full_output;
     }
 

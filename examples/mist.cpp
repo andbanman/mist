@@ -29,6 +29,7 @@ struct Parameters {
     std::string outfile;
     std::string configfile;
     int tuple_size;
+    long tuple_limit;
     int num_threads;
     bool pd_cache;
 };
@@ -90,6 +91,7 @@ int main(int argc, char *argv[]) {
     // defaults
     Parameters dparam;
     dparam.tuple_size = 2;
+    dparam.tuple_limit = 0;
     dparam.num_threads = 2;
     dparam.pd_cache = true;
     dparam.measure = "symmetricdelta";
@@ -112,6 +114,7 @@ int main(int argc, char *argv[]) {
         ("output-file,o", po::value(&param.outfile)->default_value(dparam.outfile), "Results output file")
         ("config-file,c", po::value(&param.configfile), "YML Config file")
         ("tuple-size,s", po::value(&param.tuple_size)->default_value(dparam.tuple_size), "Number of variables in each tuple")
+        ("tuple-limit,l", po::value(&param.tuple_limit)->default_value(dparam.tuple_limit), "Maximum number of tuples to process")
         ("measure,m", po::value(&param.measure)->default_value(dparam.measure), "Information Theory Measure")
         ("version,v", "Print version string and exit")
     ;

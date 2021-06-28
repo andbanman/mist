@@ -99,6 +99,11 @@ public:
      */
     void set_tuple_space(algorithm::TupleSpace const& ts);
 
+    /** Set the maximum number of tuples to process. The default it 0, meaning
+     * unlimited.
+     */
+    void set_tuple_limit(long limit);
+
     /** Include all subcalculations in the output
      */
     void full_output();
