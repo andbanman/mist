@@ -38,6 +38,10 @@ public:
      * @return header string
      */
     virtual std::string header(int d, bool full_output) const = 0;
+
+    /** Whether this measure uses intermediate entropy calculations
+     */
+    virtual bool full_entropy() const = 0;
 };
 
 } // it

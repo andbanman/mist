@@ -119,7 +119,6 @@ int main(int argc, char *argv[]) {
     po::options_description opt_perf("Performance-tuning options");
     opt_perf.add_options()
         ("pd-algorithm", po::value(&param.pd_algorithm)->default_value(dparam.pd_algorithm), "Probabilty distribution counting algorithm")
-        ("pd-cache", po::value(&param.pd_cache)->default_value(dparam.pd_cache), "Toggle probability distribution caching")
         ("threads,t", po::value(&param.num_threads)->default_value(dparam.num_threads), "Number of threads")
     ;
 
@@ -175,13 +174,6 @@ int main(int argc, char *argv[]) {
     mist.set_tuple_size(param.tuple_size);
     mist.set_outfile(param.outfile);
     mist.load_file(param.infile);
-    if (!param.pd_cache) {
-        mist.disable_cache_d1();
-        mist.disable_cache_d2();
-    } else {
-        mist.enable_cache_d1();
-        mist.enable_cache_d2();
-    }
     mist.compute();
     if (debug)
         mist.printCacheStats();

@@ -38,9 +38,7 @@ private:
     //std::experimental::propagate_const<std::unique_ptr<impl>> pimpl;
     std::unique_ptr<impl> pimpl;
 
-    bool cacheInvalid();
-    void primeCaches();
-    void configureThreads();
+    void init_caches();
 
 public:
     Search();
@@ -103,22 +101,6 @@ public:
     /** Include all subcalculations in the output
      */
     void full_output();
-
-    /** Enable caching intermediate results for individual Variables.
-     */
-    void enable_cache_d1();
-
-    /** Enable caching intermediate results for Variable sub-tuples size 2.
-     */
-    void enable_cache_d2();
-
-    /**  Disable caching intermediate results for individual Variables.
-     */
-    void disable_cache_d1();
-
-    /** Disable caching intermediate results for Variable sub-tuples size 2.
-     */
-    void disable_cache_d2();
 
     /** Load Data from CSV or tab-separated file.
      *

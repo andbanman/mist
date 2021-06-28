@@ -352,7 +352,7 @@ Worker::start()
   int start = step * (this->rank);
   int stop = start + step;
   int d = group_tuples.front().size();
-  bool full = (dynamic_cast<it::SymmetricDelta*>(measure.get()));
+  bool full = measure->full_entropy();
 
   // hard stop the last rank
   if (rank == ranks - 1) {

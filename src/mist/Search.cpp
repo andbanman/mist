@@ -12,6 +12,7 @@
 #include "it/BitsetCounter.hpp"
 #include "it/Entropy.hpp"
 #include "it/EntropyCalculator.hpp"
+#include "it/SymmetricDelta.hpp"
 
 using namespace mist;
 
@@ -31,12 +32,6 @@ enum struct probability_algorithms : int {
     bitset
 };
 
-enum struct cache_types : int {
-    none,
-    memory,
-    small_files
-};
-
 struct thread_config {
     measure_ptr measure;
     output_stream_ptr output_stream;
@@ -51,24 +46,15 @@ struct Search::impl {
     measure_ptr measure;
     std::vector<cache_ptr> shared_caches;
     std::vector<thread_config> threads;
-    cache_types prev_cache_type = cache_types::none;
 
     // config
-    bool cache_d1_enabled = true;
-    bool cache_d2_enabled = true;
+    bool use_cache = true;
     bool full_output = false;
     int no_thread;
     int tuple_size;
     probability_algorithms probability_algorithm;
-    int cache_dimensions = 2; // TODO: right now we only support 3D so 2 is complete
-    std::size_t cache_memory_size = 0 ;
-    std::string cache_files_root;
     std::string outfile;
     algorithm::TupleSpace tupleSpace;
-
-    // state
-    cache_types cache_type = cache_types::none;
-    std::size_t prev_cache_memory_size = 0;
 };
 
 Search::Search() : pimpl(std::make_unique<impl>()) {
@@ -80,7 +66,6 @@ Search::Search() : pimpl(std::make_unique<impl>()) {
     pimpl->no_thread = std::thread::hardware_concurrency();
     pimpl->tuple_size = 2;
     pimpl->probability_algorithm = probability_algorithms::vector;
-    pimpl->cache_type = cache_types::memory;
 };
 
 Search::Search(const Search& other) : pimpl(std::make_unique<impl>()) {
@@ -95,12 +80,16 @@ void Search::set_measure(std::string const& measure) {
     std::string test(measure);
     transform(test.begin(), test.end(), test.begin(), ::tolower);
 
-    if (test == "symmetricdelta")
+    if (test == "symmetricdelta") {
         pimpl->measure = measure_ptr(new it::SymmetricDelta());
-    else if (test == "entropy")
+    }
+    else if (test == "entropy") {
         pimpl->measure = measure_ptr(new it::EntropyMeasure());
-    else
-        throw SearchException("set_measure", "Invalid measure: " + measure + ", allowed: [SymmetricDelta,Entropy]");
+    }
+    else {
+        throw SearchException("set_measure", "Invalid measure: " + measure +
+                              ", allowed: [SymmetricDelta,Entropy]");
+    }
 }
 
 void Search::set_probability_algorithm(std::string const& algorithm) {
@@ -114,25 +103,6 @@ void Search::set_probability_algorithm(std::string const& algorithm) {
     else
         throw SearchException("set_probability_algorithm", "Invalid probability algorithm : " + algorithm + ", allowed: [bitset, vector]");
 }
-
-#if 0
-//TODO: not implemented
-void Search::set_cache_files_root(std::string const& directory) {
-    throw SearchException("set_cache_files", "Not yet implemented.");
-    pimpl->cache_type = cache_types::small_files;
-    pimpl->cache_files_root = directory;
-    // TODO validate directory
-}
-#endif
-
-#if 0
-//TODO: not implemented
-void Search::set_cache_memory(std::size_t size) {
-    throw SearchException("set_cache_memory", "Not yet implemented.");
-    pimpl->cache_type = cache_types::memory;
-    pimpl->cache_memory_size = size;
-}
-#endif
 
 void Search::set_outfile(std::string const& filename) {
     // Thread copies of FileOutputStream should be constructed from
@@ -220,10 +190,6 @@ void Search::set_tuple_space(algorithm::TupleSpace const& ts) {
 }
 
 void Search::set_threads(int threads) { pimpl->no_thread = threads; }
-void Search::enable_cache_d1() { pimpl->cache_d1_enabled = true; };
-void Search::enable_cache_d2() { pimpl->cache_d2_enabled = true; };
-void Search::disable_cache_d1() { pimpl->cache_d1_enabled = false; };
-void Search::disable_cache_d2() { pimpl->cache_d2_enabled = false; };
 void Search::full_output() { pimpl->full_output = true; };
 
 void Search::load_file(std::string const& filename) {
@@ -263,13 +229,6 @@ void Search::printCacheStats() {
     }
 }
 
-bool Search::cacheInvalid() {
-    return (
-            pimpl->cache_type != pimpl->prev_cache_type ||
-            pimpl->cache_memory_size != pimpl->prev_cache_memory_size
-           );
-}
-
 entropy_calc_ptr makeEntropyCalc(probability_algorithms const& type, Variable::tuple const& variables, std::vector<cache_ptr> & caches) {
     it::EntropyCalculator *calc = 0;
     switch (type) {
@@ -287,10 +246,9 @@ entropy_calc_ptr makeEntropyCalc(probability_algorithms const& type, Variable::t
     return entropy_calc_ptr(calc);
 }
 
-void Search::primeCaches() {
+void Search::init_caches() {
     auto entropy_measure = measure_ptr(new it::EntropyMeasure());
     int nvar = pimpl->data->n;
-    int tuple_size = pimpl->tuple_size;
     int num_thread = pimpl->no_thread;
     auto variables = pimpl->data->variables();
 
@@ -326,9 +284,6 @@ void Search::primeCaches() {
         for (auto& thread : threads)
             thread.join();
     }
-
-    pimpl->prev_cache_type = pimpl->cache_type;
-    pimpl->prev_cache_memory_size = pimpl->cache_memory_size;
 }
 
 //
@@ -359,8 +314,10 @@ void Search::compute() {
             throw SearchException("compute", "Failed to create FileOutputStream from file '" + pimpl->outfile + "'");
     }
 
-    // TODO when to use or not use the cache
-    primeCaches();
+    // Only use caches for measures that use intermediate entropies
+    if (pimpl->use_cache && pimpl->measure->full_entropy()) {
+        init_caches();
+    }
 
     std::vector<algorithm::Worker> workers(num_thread);
     std::vector<std::thread> threads(num_thread-1);

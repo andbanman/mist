@@ -32,6 +32,8 @@ public:
         entropy012,
         size
     };
+
+    bool full_entropy() const { return false; };
 };
 
 class EntropyMeasureException : public std::exception {

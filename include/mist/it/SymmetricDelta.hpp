@@ -30,6 +30,8 @@ public:
         symmetric_mist,
         size
     };
+
+    bool full_entropy() const { return true; };
 };
 
 class SymmetricDeltaException : public std::exception {
