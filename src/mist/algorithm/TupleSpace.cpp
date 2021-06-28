@@ -11,7 +11,7 @@
 using namespace mist;
 using namespace mist::algorithm;
 
-TupleSpace::TupleSpace() { };
+TupleSpace::TupleSpace() : tuple_size(0) { };
 TupleSpace::~TupleSpace() { };
 
 // default space for N variables in tuples size d

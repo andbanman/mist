@@ -9,7 +9,9 @@
 #include "Search.hpp"
 #include "algorithm/TupleSpace.hpp"
 #include "algorithm/Worker.hpp"
+#include "it/BitsetCounter.hpp"
 #include "it/Entropy.hpp"
+#include "it/EntropyCalculator.hpp"
 
 using namespace mist;
 
@@ -268,6 +270,23 @@ bool Search::cacheInvalid() {
            );
 }
 
+entropy_calc_ptr makeEntropyCalc(probability_algorithms const& type, Variable::tuple const& variables, std::vector<cache_ptr> & caches) {
+    it::EntropyCalculator *calc = 0;
+    switch (type) {
+        case probability_algorithms::vector:
+            calc = new it::EntropyCalculator(variables,
+                                             std::shared_ptr<it::VectorCounter>(
+                                             new it::VectorCounter()), caches);
+            break;
+        case probability_algorithms::bitset:
+            calc = new it::EntropyCalculator(variables,
+                                             std::shared_ptr<it::BitsetCounter>(
+                                             new it::BitsetCounter(variables)), caches);
+            break;
+    }
+    return entropy_calc_ptr(calc);
+}
+
 void Search::primeCaches() {
     auto entropy_measure = measure_ptr(new it::EntropyMeasure());
     int nvar = pimpl->data->n;
@@ -291,16 +310,18 @@ void Search::primeCaches() {
     for (int d = 1; d < 3; d++) {
         std::vector<algorithm::Worker> workers(num_thread);
         std::vector<std::thread> threads(num_thread-1);
+        std::vector<cache_ptr> caches = { pimpl->shared_caches[d-1] };
+        auto ts = algorithm::TupleSpace(nvar, d);
+        auto calc = makeEntropyCalc(pimpl->probability_algorithm, variables,
+                                    caches);
+
         for (int ii = 0; ii < num_thread; ii++) {
-            // TODO allow bitset counter here
-            auto calc = entropy_calc_ptr(new it::EntropyCalculator(variables,
-                        std::shared_ptr<it::VectorCounter>(
-                            new it::VectorCounter()), pimpl->shared_caches[d-1]));
-            workers[ii] = algorithm::Worker(ii, num_thread,
-                    algorithm::TupleSpace(nvar, d), calc, 0, entropy_measure);
+            workers[ii] = algorithm::Worker(ii, num_thread, ts, calc, 0,
+                                            entropy_measure);
         }
-        for (int ii = 0; ii < num_thread-1; ii++)
+        for (int ii = 0; ii < num_thread-1; ii++) {
             threads[ii] = std::thread(&algorithm::Worker::start, workers[ii]);
+        }
         workers.back().start();
         for (auto& thread : threads)
             thread.join();
@@ -325,6 +346,11 @@ void Search::compute() {
     int num_thread = pimpl->no_thread;
     auto variables = pimpl->data->variables();
 
+    // load default tuplespace if one has not been set yet
+    if (!pimpl->tupleSpace.tupleSize()) {
+        pimpl->tupleSpace = algorithm::TupleSpace(nvar, tuple_size);
+    }
+
     // initialize output file stream
     if (!pimpl->outfile.empty()) {
         auto header = pimpl->measure->header(tuple_size, pimpl->full_output);
@@ -332,22 +358,20 @@ void Search::compute() {
         if (!pimpl->file_output)
             throw SearchException("compute", "Failed to create FileOutputStream from file '" + pimpl->outfile + "'");
     }
-    std::vector<algorithm::Worker> workers(num_thread);
-    std::vector<std::thread> threads(num_thread-1);
 
     // TODO when to use or not use the cache
     primeCaches();
 
+    std::vector<algorithm::Worker> workers(num_thread);
+    std::vector<std::thread> threads(num_thread-1);
+    auto calc = makeEntropyCalc(pimpl->probability_algorithm, variables,
+                                pimpl->shared_caches);
     // Create Workers
     for (int ii = 0; ii < num_thread; ii++) {
-        auto calc = entropy_calc_ptr(new it::EntropyCalculator(
-                    variables, std::shared_ptr<it::VectorCounter>(
-                        new it::VectorCounter()), pimpl->shared_caches));
         auto outt = std::shared_ptr<io::OutputStream>(new io::FileOutputStream(
-                    *pimpl->file_output));
-        workers[ii] = algorithm::Worker(ii, num_thread,
-                        algorithm::TupleSpace(nvar, tuple_size),
-                        calc, outt, pimpl->measure);
+                                                      *pimpl->file_output));
+        workers[ii] = algorithm::Worker(ii, num_thread, pimpl->tupleSpace, calc,
+                                        outt, pimpl->measure);
     }
 
     // Start child ranks
