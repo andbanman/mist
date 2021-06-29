@@ -10,7 +10,7 @@ mist
 --------
 The root namespace includes composition classes and classes common to the sub-namespaces.
 
-.. doxygenclass:: mist::Mist
+.. doxygenclass:: mist::Search
   :members:
 
 .. doxygenclass:: mist::Variable
