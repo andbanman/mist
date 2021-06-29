@@ -330,7 +330,7 @@ void Search::start() {
         throw SearchException("start", "No data loaded, use load_file or load_ndarray.");
     if (!pimpl->measure)
         throw SearchException("start", "No IT Measure selected, use set_measure.");
-    if (!pimpl->parallel_search && pimpl->total_ranks < pimpl->ranks) {
+    if (pimpl->parallel_search && pimpl->total_ranks < pimpl->ranks) {
         throw SearchException("start",
                               "ranks for this Search cannot be greater than total_ranks.");
     }
