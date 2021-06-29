@@ -1,5 +1,6 @@
 #pragma once
 
+#include "io/MapOutputStream.hpp"
 #include <memory>
 #include <stdexcept>
 
@@ -29,25 +30,23 @@ namespace mist {
  *
  * CPP and Python users instantiate this class, load data, and optionally call
  * various configuration methods to define the computation. Computations begin
- * with compute(). Maintains state in between runs, such as intermediate value
+ * with start(). Maintains state in between runs, such as intermediate value
  * caches for improved performance.
  */
-class Mist {
+class Search {
 private:
     class impl;
     //std::experimental::propagate_const<std::unique_ptr<impl>> pimpl;
     std::unique_ptr<impl> pimpl;
 
-    bool cacheInvalid();
-    void primeCaches();
-    void configureThreads();
+    void init_caches();
 
 public:
-    Mist();
-    Mist(Mist&&);
-    Mist(const Mist&);
-    Mist& operator=(Mist&&);
-    ~Mist();
+    Search();
+    Search(Search&&);
+    Search(const Search&);
+    Search& operator=(Search&&);
+    ~Search();
 
     //
     // Configuration toggles
@@ -60,20 +59,7 @@ public:
      *   information. See Sakhanenko, Galas in the literature.
      */
     void set_measure(std::string const& measure);
-
-    /** Set the tuple sharing algorithm between thread
-     *
-     * See algorithm::TupleProducer for list of availabled algorithms.
-     */
-    void set_tuple_algorithm(std::string const& tuple_algorithm);
-
-    /** Set the serach space type
-     *
-     * - Exhaustive (default): include all unique combinations of variables in
-     *   the tuple search space.
-     * - TupleSpace : include only tuples defined by algorithm::TupleSpace, see Mist::set_tuple_space.
-     */
-    void set_search_type(std::string const& search_type);
+    std::string get_measure();
 
     /** Set the algorithm for generating probability distributions.
      *
@@ -90,27 +76,48 @@ public:
      * generation dominates the computation.
      */
     void set_probability_algorithm(std::string const& algorithm);
+    std::string get_probability_algorithm();
 
     /** Set output CSV file.
-     *
-     * Side effects
-     * - disables in-memory result keeping, causing get_results to throw.
-     *
-     * TODO: remove side effect.
      */
     void set_outfile(std::string const& filename);
+    std::string get_outfile();
 
-    /** Set number of concurrent threads.
+    /** Set number of concurrent ranks to use in this Search.
      *
-     * In the producer-consumer work sharing model, the number of threads
-     * includes all producers and consumers. The number of threads has the
-     * greatest effect on runtime.
+     * A rank on a computation node is one execution thread. The default ranks
+     * is the number of threads allowed by the node.
      */
-    void set_threads(int num_consumers);
+    void set_ranks(int ranks);
+    int get_ranks();
+
+    /** Set the starting rank for this Search.
+     *
+     * A Mist search can run in parallel on multiple nodes in a system. For
+     * each node, configure a Search with the starting rank, number of ranks
+     * (ie threads) on the node, and total ranks among all nodes. In this way
+     * you can divide the search space among nodes in the system.
+     *
+     * The starting rank is the zero-indexed rank number, valid over range
+     * [0,total_ranks].
+     *
+     * @param rank Zero-indexed rank number
+     */
+    void set_start_rank(int rank);
+    int get_start_rank();
+
+    /** Set the total number of ranks among all participating Searches.
+     *
+     * Each thread on each node is counted as a rank. So the total_ranks is the
+     * sum of configured ranks (threads) on each node.
+     */
+    void set_total_ranks(int ranks);
+    int get_total_ranks();
 
     /** Set the number of Variables to include in each IT measure computation.
      */
     void set_tuple_size(int size);
+    int get_tuple_size();
 
     /** Set the custom tuple space for the next computation
      *
@@ -118,26 +125,18 @@ public:
      * space becomes effective immediately.
      */
     void set_tuple_space(algorithm::TupleSpace const& ts);
+    algorithm::TupleSpace get_tuple_space();
+
+    /** Set the maximum number of tuples to process. The default it 0, meaning
+     * unlimited.
+     */
+    void set_tuple_limit(long limit);
+    long get_tuple_limit();
 
     /** Include all subcalculations in the output
      */
-    void full_output();
-
-    /** Enable caching intermediate results for individual Variables.
-     */
-    void enable_cache_d1();
-
-    /** Enable caching intermediate results for Variable sub-tuples size 2.
-     */
-    void enable_cache_d2();
-
-    /**  Disable caching intermediate results for individual Variables.
-     */
-    void disable_cache_d1();
-
-    /** Disable caching intermediate results for Variable sub-tuples size 2.
-     */
-    void disable_cache_d2();
+    void set_output_intermediate(bool);
+    bool get_output_intermediate();
 
     /** Load Data from CSV or tab-separated file.
      *
@@ -158,6 +157,17 @@ public:
      * @pre Array is NxM matrix of the expected dtype and C memory layout.
      */
     void load_ndarray(np::ndarray const& np);
+
+    /** Return a Numpy ndarray copy of all results
+     */
+    np::ndarray python_get_results();
+
+    /** Start search.
+     *
+     * Compute the configured IT measure for all Variable tuples in the
+     * configured search space. And return up to tuple_limit number of results.
+     */
+    np::ndarray python_start();
 #endif
 
     /** Begin computation.
@@ -165,21 +175,9 @@ public:
      * Compute the configured IT measure for all Variable tuples in the
      * configured search space.
      */
-    void compute();
+    void start();
 
-#if BOOST_PYTHON_EXTENSIONS
-    /** Return computation results in a Python Numpy.ndarray.
-     *
-     * @throws exception set_outfile has been called
-     * @see set_outfile
-     */
-    np::ndarray python_get_results();
-#endif
-
-    /** Return computation results in the native data type.
-     *
-     * @throws exception set_outfile has been called
-     * @see set_outfile
+    /** Return a copy of all results
      */
     io::MapOutputStream::map_type get_results();
 
@@ -187,17 +185,17 @@ public:
      */
     void printCacheStats();
 
-    /** Return the Mist library Version string
+    /** Return the Search library Version string
      */
     std::string version();
 };
 
-class MistException : public std::exception {
+class SearchException : public std::exception {
 private:
     std::string msg;
 public:
-    MistException(std::string const& method, std::string const& msg) :
-        msg("Mist::" + method + " : " + msg) { }
+    SearchException(std::string const& method, std::string const& msg) :
+        msg("Search::" + method + " : " + msg) { }
     virtual const char* what() const throw() {
         return msg.c_str();
     };

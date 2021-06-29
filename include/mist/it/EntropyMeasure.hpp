@@ -4,6 +4,7 @@
 
 #include "Measure.hpp"
 #include "EntropyCalculator.hpp"
+#include "Entropy.hpp"
 
 namespace mist {
 namespace it {
@@ -14,7 +15,7 @@ public:
     ~EntropyMeasure() { };
 
     result_type compute(EntropyCalculator &ecalc, Variable::indexes const& tuple) const;
-    void recomputeLastIndex(EntropyCalculator &ecalc, Variable::indexes const& tuple, result_type & sub) const;
+    result_type compute(EntropyCalculator &ecalc, Variable::indexes const& tuple, Entropy const& e) const;
     std::string header(int d, bool full_output) const;
 
     enum struct sub_calc_1d : int {
@@ -31,6 +32,8 @@ public:
         entropy012,
         size
     };
+
+    bool full_entropy() const { return false; };
 };
 
 class EntropyMeasureException : public std::exception {

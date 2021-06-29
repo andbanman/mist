@@ -11,8 +11,18 @@
 using namespace mist;
 using namespace mist::algorithm;
 
-TupleSpace::TupleSpace() { };
+TupleSpace::TupleSpace() : tuple_size(0) { };
 TupleSpace::~TupleSpace() { };
+
+// default space for N variables in tuples size d
+TupleSpace::TupleSpace(int N, int d) {
+    tuple_type vars(N);
+    for (int ii = 0; ii < N; ii++)
+        vars[ii] = ii;
+    this->addVariableGroup("default", vars);
+    tuple_type groupTuple(d, 0);
+    this->addVariableGroupTuple(groupTuple);
+};
 
 std::vector<std::string> TupleSpace::names() const {
     return variableNames;
@@ -20,6 +30,10 @@ std::vector<std::string> TupleSpace::names() const {
 
 void TupleSpace::set_names(std::vector<std::string> const& names) {
     variableNames = names;
+}
+
+int TupleSpace::tupleSize() const {
+    return tuple_size;
 }
 
 void TupleSpace::addVariableGroupTuple(std::vector<std::string> const& groupNames) {
@@ -35,6 +49,11 @@ void TupleSpace::addVariableGroupTuple(std::vector<std::string> const& groupName
 }
 
 void TupleSpace::addVariableGroupTuple(TupleSpace::tuple_type const& groupIndexes) {
+    // validate tuple size
+    if (!tuple_size)
+        tuple_size = groupIndexes.size();
+    else if (tuple_size != groupIndexes.size())
+            throw TupleSpaceException("addVariableGroupTuple", "Could not add group tuple, all tuples must be the same size");
     // validate group indexes
     for (auto group : groupIndexes)
         if (group >= variableGroups.size())

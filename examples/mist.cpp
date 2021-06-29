@@ -8,7 +8,7 @@
 #include <boost/optional/optional_io.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "Mist.hpp"
+#include "Search.hpp"
 #include "yaml-cpp/yaml.h"
 
 const std::string config_help = "The config file passed with option -c accepts this YAML structure: \n\
@@ -29,6 +29,7 @@ struct Parameters {
     std::string outfile;
     std::string configfile;
     int tuple_size;
+    long tuple_limit;
     int num_threads;
     bool pd_cache;
 };
@@ -48,7 +49,7 @@ void printVersion(std::string const& version) {
     std::cout << "Mist library version " << version << "\n";
 }
 
-void load_yml_config(std::string file, mist::Mist &mist) {
+void load_yml_config(std::string file, mist::Search &mist) {
     mist::algorithm::TupleSpace ts;
     YAML::Node config = YAML::LoadFile(file);
 
@@ -90,6 +91,7 @@ int main(int argc, char *argv[]) {
     // defaults
     Parameters dparam;
     dparam.tuple_size = 2;
+    dparam.tuple_limit = 0;
     dparam.num_threads = 2;
     dparam.pd_cache = true;
     dparam.measure = "symmetricdelta";
@@ -112,6 +114,7 @@ int main(int argc, char *argv[]) {
         ("output-file,o", po::value(&param.outfile)->default_value(dparam.outfile), "Results output file")
         ("config-file,c", po::value(&param.configfile), "YML Config file")
         ("tuple-size,s", po::value(&param.tuple_size)->default_value(dparam.tuple_size), "Number of variables in each tuple")
+        ("tuple-limit,l", po::value(&param.tuple_limit)->default_value(dparam.tuple_limit), "Maximum number of tuples to process")
         ("measure,m", po::value(&param.measure)->default_value(dparam.measure), "Information Theory Measure")
         ("version,v", "Print version string and exit")
     ;
@@ -119,9 +122,7 @@ int main(int argc, char *argv[]) {
     po::options_description opt_perf("Performance-tuning options");
     opt_perf.add_options()
         ("pd-algorithm", po::value(&param.pd_algorithm)->default_value(dparam.pd_algorithm), "Probabilty distribution counting algorithm")
-        ("pd-cache", po::value(&param.pd_cache)->default_value(dparam.pd_cache), "Toggle probability distribution caching")
         ("threads,t", po::value(&param.num_threads)->default_value(dparam.num_threads), "Number of threads")
-        ("tuple-algorithm", po::value(&param.tuple_algorithm)->default_value(dparam.tuple_algorithm), "Thread work-sharing algorithm")
     ;
 
     // combine options groups
@@ -145,7 +146,7 @@ int main(int argc, char *argv[]) {
     bool debug = vm.count("debug");
     bool version = vm.count("version");
 
-    mist::Mist mist;
+    mist::Search mist;
 
     if (!param.configfile.empty()) {
         load_yml_config(param.configfile, mist);
@@ -171,20 +172,12 @@ int main(int argc, char *argv[]) {
     //
     // Run computation
     //
-    mist.set_tuple_algorithm(param.tuple_algorithm);
     mist.set_probability_algorithm(param.pd_algorithm);
-    mist.set_threads(param.num_threads);
+    mist.set_ranks(param.num_threads);
     mist.set_tuple_size(param.tuple_size);
     mist.set_outfile(param.outfile);
     mist.load_file(param.infile);
-    if (!param.pd_cache) {
-        mist.disable_cache_d1();
-        mist.disable_cache_d2();
-    } else {
-        mist.enable_cache_d1();
-        mist.enable_cache_d2();
-    }
-    mist.compute();
+    mist.start();
     if (debug)
         mist.printCacheStats();
     return 0;

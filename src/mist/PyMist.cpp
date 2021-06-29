@@ -7,7 +7,7 @@
 
 #include "algorithm/TupleSpace.hpp"
 #include "io/DataMatrix.hpp"
-#include "Mist.hpp"
+#include "Search.hpp"
 
 namespace p = boost::python;
 #if BOOST_PREDEF_VERSION < BOOST_VERSION_NUMBER(1, 6, 0)
@@ -36,23 +36,29 @@ BOOST_PYTHON_MODULE(libmist)
         .def("addVariableGroupTuple", &algorithm::TupleSpace::pyAddVariableGroupTuple)
     ;
 
-    p::class_<Mist>("Mist")
-        .def("load_ndarray", &Mist::load_ndarray)
-        .def("load_file", &Mist::load_file)
-        .def("set_outfile", &Mist::set_outfile)
-        .def("get_results", &Mist::python_get_results)
-        .def("compute", &Mist::compute)
-        .def("set_measure", &Mist::set_measure)
-        .def("set_threads", &Mist::set_threads)
-        .def("set_tuple_size", &Mist::set_tuple_size)
-        .def("set_tuple_space", &Mist::set_tuple_space)
-        .def("set_search_type", &Mist::set_search_type)
-        .def("set_probability_algorithm", &Mist::set_probability_algorithm)
-        .def("enable_cache_d1", &Mist::enable_cache_d1)
-        .def("enable_cache_d2", &Mist::enable_cache_d2)
-        .def("disable_cache_d1", &Mist::enable_cache_d1)
-        .def("disable_cache_d2", &Mist::enable_cache_d2)
-        .def("full_output", &Mist::full_output)
-        .def("version", &Mist::version)
+    p::class_<Search>("Search")
+        .add_property("measure", &Search::get_measure, &Search::set_measure)
+        .add_property("probability_algorithm", &Search::get_probability_algorithm,
+                                               &Search::set_probability_algorithm)
+        .add_property("outfile", &Search::get_outfile, &Search::set_outfile)
+        .add_property("output_intermediate", &Search::get_output_intermediate,
+                                             &Search::set_output_intermediate)
+        .add_property("ranks", &Search::get_ranks, &Search::set_ranks)
+        .add_property("start_rank", &Search::get_start_rank,
+                                    &Search::set_start_rank)
+        .add_property("threads", &Search::get_ranks, &Search::set_ranks)
+        .add_property("total_ranks", &Search::get_total_ranks,
+                                     &Search::set_total_ranks)
+        .add_property("tuple_limit", &Search::get_tuple_limit,
+                                     &Search::set_tuple_limit)
+        .add_property("tuple_size", &Search::get_tuple_size,
+                                    &Search::set_tuple_size)
+        .add_property("tuple_space", &Search::get_tuple_space,
+                                    &Search::set_tuple_space)
+        .def("start", &Search::start)
+        .def("load_ndarray", &Search::load_ndarray)
+        .def("load_file", &Search::load_file)
+        .def("start", &Search::python_start)
+        .def("version", &Search::version)
     ;
 }

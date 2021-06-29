@@ -14,7 +14,7 @@ public:
     ~SymmetricDelta() { };
 
     result_type compute(EntropyCalculator &ecalc, Variable::indexes const& tuple) const;
-    void recomputeLastIndex(EntropyCalculator &ecalc, Variable::indexes const& tuple, result_type & sub) const;
+    result_type compute(EntropyCalculator &ecalc, Variable::indexes const& tuple, Entropy const& e) const;
     std::string header(int d, bool full_output) const;
 
     enum struct sub_calc_2d : int {
@@ -30,6 +30,8 @@ public:
         symmetric_mist,
         size
     };
+
+    bool full_entropy() const { return true; };
 };
 
 class SymmetricDeltaException : public std::exception {

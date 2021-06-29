@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "io/DataMatrix.hpp" //TODO: don't cross namespace!
+#include "it/Entropy.hpp"
 #include "it/EntropyCalculator.hpp"
 #include "it/SymmetricDelta.hpp"
 
@@ -87,12 +88,13 @@ BOOST_AUTO_TEST_CASE(SymmetricDelta_compute_subcalc, * boost::unit_test::toleran
     BOOST_TEST(res3[(int) it::SymmetricDelta::sub_calc_3d::diffInfo2] == D2);
 }
 
+// test re-use entropy
 BOOST_AUTO_TEST_CASE(SymmetricDelta_compute_completion, * boost::unit_test::tolerance(tolerance)) {
     it::SymmetricDelta sym;
-    auto res2 = sym.compute(ec, {0,1});
-    sym.recomputeLastIndex(ec, {0,2}, res2);
-    BOOST_TEST(res2.back() == I02);
-    BOOST_TEST(res2[(int) it::SymmetricDelta::sub_calc_2d::entropy0] == e0);
-    BOOST_TEST(res2[(int) it::SymmetricDelta::sub_calc_2d::entropy1] == e2);
-    BOOST_TEST(res2[(int) it::SymmetricDelta::sub_calc_2d::entropy01] == e02);
+    it::Entropy ee((int) it::d2::size);
+    ee[(int) it::d2::e0] = e0;
+    ee[(int) it::d2::e1] = e1;
+    ee[(int) it::d2::e01] = e01;
+    auto res = sym.compute(ec, {0,1}, ee);
+    BOOST_TEST(res.back() == I01);
 }

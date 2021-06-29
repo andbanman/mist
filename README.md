@@ -17,12 +17,12 @@ The easiest way to run Mist is through the Python module. The following minimal 
 ::
 
     import libmist
-    mist = libmist.Mist()
+    mist = libmist.Search()
     mist.load_file('/path/to/data.csv')
     mist.set_outfile('/dev/stdout')
-    mist.compute()
+    mist.start()
 
-There are numerous functions to configure Mist -- below are some of the most important. For a full list read the API documentation for mist::Mist.
+There are numerous functions to configure Mist -- below are some of the most important. For a full list read the API documentation for mist::Search.
 
 ::
 
