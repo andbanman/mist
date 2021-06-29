@@ -10,6 +10,12 @@
 namespace mist {
 namespace algorithm {
 
+/** The Worker class divides and conquers the tuple search space.
+ *
+ * The Worker processes each tuple in the configured search space, or a portion
+ * of the search space depending on the rank parameters. It is common for each
+ * computing thread on the system to have a unique Worker instance.
+ */
 class Worker
 {
 public:
@@ -28,14 +34,26 @@ public:
 
   ~Worker();
   Worker();
+  /** Construct and configure a Worker instance.
+   *
+   * @param rank Zero-indexed rank number [0, ranks]
+   * @param ranks Total number of Workers participating in the search
+   * @param limit Upper limit on number of tuples to processes by all Workers
+   * @param ts TupleSpace that defines the tuple search space
+   * @param out_streams Collection OutputStream pointers to send results
+   * @param measure The it::Measure to calculate the results
+   */
   Worker(int rank,
-         int threads,
+         int ranks,
          long limit,
          TupleSpace const& ts,
          entropy_calc_ptr calc,
          std::vector<output_stream_ptr> out_streams,
          measure_ptr measure);
 
+  /** Start the Worker search space execution. Returns when all tuples in the
+   * search space have been processed.
+   */
   void start();
 
   bool output_all = false;
