@@ -36,6 +36,23 @@ This Python syntax is virtually identical to the C++ code you would write for a 
 Building
 --------
 
+Docker
+~~~~~~
+
+Mist can be built into a Docker image with the included docker file
+
+::
+
+  cd /path/to/mist
+  docker image build . -t mist
+  docker run --rm -v ./:/mist mist
+
+The default command builds the Mist python module, which can then be run in an interactive session or with python script, e.g.
+
+::
+
+  docker run --it --rm -v ./:/mist mist python3
+
 mist
 ~~~~
 
