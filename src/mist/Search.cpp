@@ -305,12 +305,12 @@ void Search::init_caches() {
 //
 // Run full algoirithm as configured
 //
-void Search::compute() {
+void Search::start() {
     // sanity checks
     if (!pimpl->data)
-        throw SearchException("compute", "No data loaded, use load_file or load_ndarray.");
+        throw SearchException("start", "No data loaded, use load_file or load_ndarray.");
     if (!pimpl->measure)
-        throw SearchException("compute", "No IT Measure selected, use set_measure.");
+        throw SearchException("start", "No IT Measure selected, use set_measure.");
 
     int nvar = pimpl->data->n;
     int tuple_size = pimpl->tuple_size;
@@ -327,7 +327,7 @@ void Search::compute() {
         auto header = pimpl->measure->header(tuple_size, pimpl->full_output);
         pimpl->file_output = file_stream_ptr(new io::FileOutputStream(pimpl->outfile, header));
         if (!pimpl->file_output)
-            throw SearchException("compute", "Failed to create FileOutputStream from file '" + pimpl->outfile + "'");
+            throw SearchException("start", "Failed to create FileOutputStream from file '" + pimpl->outfile + "'");
     }
 
     // Only use caches for measures that use intermediate entropies
@@ -380,7 +380,7 @@ void Search::compute() {
 #if BOOST_PYTHON_EXTENSIONS
 np::ndarray Search::python_start()
 {
-    compute();
+    start();
     return python_get_results();
 }
 #endif

@@ -50,7 +50,7 @@ BOOST_PYTHON_MODULE(libmist)
                                     &Search::set_tuple_size)
         .add_property("tuple_space", &Search::get_tuple_space,
                                     &Search::set_tuple_space)
-        .def("compute", &Search::compute)
+        .def("start", &Search::start)
         .def("load_ndarray", &Search::load_ndarray)
         .def("load_file", &Search::load_file)
         .def("start", &Search::python_start)

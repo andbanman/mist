@@ -18,7 +18,7 @@ Select the measure you want to compute by name. Mist computes the measure for ea
     mist = libmist.Search()
     mist.set_measure("SymmetricDelta")
     ...
-    mist.compute()
+    mist.start()
 
 See the API documentation on Search::set_measure for a list of supported measures and how to choose them. What measure will be most useful depends on the data and how the tuples are constructed.
 
@@ -57,7 +57,7 @@ Finally, load the TupleSpace object into the Search object to set the tuple spac
 
     mist.set_tuple_space(ts)
     #...
-    mist.compute()
+    mist.start()
 
 Note that Variables are sampled without replacement, groups do not need to be contiguous, and groups can be listed multiple times in a tuple.
 

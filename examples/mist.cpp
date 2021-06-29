@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
     mist.set_tuple_size(param.tuple_size);
     mist.set_outfile(param.outfile);
     mist.load_file(param.infile);
-    mist.compute();
+    mist.start();
     if (debug)
         mist.printCacheStats();
     return 0;

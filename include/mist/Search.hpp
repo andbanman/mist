@@ -30,7 +30,7 @@ namespace mist {
  *
  * CPP and Python users instantiate this class, load data, and optionally call
  * various configuration methods to define the computation. Computations begin
- * with compute(). Maintains state in between runs, such as intermediate value
+ * with start(). Maintains state in between runs, such as intermediate value
  * caches for improved performance.
  */
 class Search {
@@ -153,7 +153,7 @@ public:
      * Compute the configured IT measure for all Variable tuples in the
      * configured search space.
      */
-    void compute();
+    void start();
 
     /** Return a copy of all results
      */
