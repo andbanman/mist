@@ -83,14 +83,36 @@ public:
     void set_outfile(std::string const& filename);
     std::string get_outfile();
 
-    /** Set number of concurrent threads.
+    /** Set number of concurrent ranks to use in this Search.
      *
-     * In the producer-consumer work sharing model, the number of threads
-     * includes all producers and consumers. The number of threads has the
-     * greatest effect on runtime.
+     * A rank on a computation node is one execution thread. The default ranks
+     * is the number of threads allowed by the node.
      */
-    void set_threads(int num_consumers);
-    int get_threads();
+    void set_ranks(int ranks);
+    int get_ranks();
+
+    /** Set the starting rank for this Search.
+     *
+     * A Mist search can run in parallel on multiple nodes in a system. For
+     * each node, configure a Search with the starting rank, number of ranks
+     * (ie threads) on the node, and total ranks among all nodes. In this way
+     * you can divide the search space among nodes in the system.
+     *
+     * The starting rank is the zero-indexed rank number, valid over range
+     * [0,total_ranks].
+     *
+     * @param rank Zero-indexed rank number
+     */
+    void set_start_rank(int rank);
+    int get_start_rank();
+
+    /** Set the total number of ranks among all participating Searches.
+     *
+     * Each thread on each node is counted as a rank. So the total_ranks is the
+     * sum of configured ranks (threads) on each node.
+     */
+    void set_total_ranks(int ranks);
+    int get_total_ranks();
 
     /** Set the number of Variables to include in each IT measure computation.
      */

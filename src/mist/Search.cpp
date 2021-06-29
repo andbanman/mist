@@ -56,7 +56,11 @@ struct Search::impl {
     bool use_cache = true;
     bool full_output = false;
     bool in_memory_output = true;
-    int no_thread;
+    // whether this Search is participating in a parallel search
+    bool parallel_search = false;
+    int ranks;
+    int start_rank;
+    int total_ranks;
     int tuple_size;
     probability_algorithms probability_algorithm;
     std::string probability_algorithm_str;
@@ -71,7 +75,9 @@ Search::Search() : pimpl(std::make_unique<impl>()) {
     pimpl->data = 0;
 
     // default config
-    pimpl->no_thread = std::thread::hardware_concurrency();
+    pimpl->ranks = std::thread::hardware_concurrency();
+    pimpl->total_ranks = pimpl->ranks;
+    pimpl->start_rank = 0;
     pimpl->tuple_size = 2;
     pimpl->probability_algorithm = probability_algorithms::vector;
     pimpl->probability_algorithm_str = "Vector"; // TODO enumerate elswhere
@@ -202,8 +208,19 @@ algorithm::TupleSpace Search::get_tuple_space() { return pimpl->tuple_space; }
 void Search::set_tuple_limit(long limit) { pimpl->tuple_limit = limit; }
 long Search::get_tuple_limit() { return pimpl->tuple_limit; }
 
-void Search::set_threads(int threads) { pimpl->no_thread = threads; }
-int Search::get_threads() { return pimpl->no_thread; }
+void Search::set_ranks(int ranks) {
+  pimpl->ranks = ranks;
+}
+int Search::get_ranks() { return pimpl->ranks; }
+
+void Search::set_start_rank(int start_rank) { pimpl->start_rank = start_rank; }
+int Search::get_start_rank() { return pimpl->ranks; }
+
+void Search::set_total_ranks(int total_ranks) {
+    pimpl->total_ranks = total_ranks;
+    pimpl->parallel_search = true;
+}
+int Search::get_total_ranks() { return pimpl->total_ranks; }
 
 void Search::set_output_intermediate(bool full) { pimpl->full_output = full; }
 bool Search::get_output_intermediate() { return pimpl->full_output; }
@@ -265,8 +282,10 @@ entropy_calc_ptr makeEntropyCalc(probability_algorithms const& type, Variable::t
 void Search::init_caches() {
     auto entropy_measure = measure_ptr(new it::EntropyMeasure());
     int nvar = pimpl->data->n;
-    int num_thread = pimpl->no_thread;
+    int num_thread = pimpl->ranks;
     auto variables = pimpl->data->variables();
+    auto total_ranks = (pimpl->parallel_search) ? pimpl->total_ranks : pimpl->ranks;
+    auto start_rank = pimpl->start_rank;
 
     // By taking each dimension on its own we prevent any two threads from
     // seeing the same tuple. Only safe for pre-sized caches, e.g. Flat, that
@@ -290,8 +309,8 @@ void Search::init_caches() {
                                     caches);
 
         for (int ii = 0; ii < num_thread; ii++) {
-            workers[ii] = algorithm::Worker(ii, num_thread, 0, ts, calc, {},
-                                            entropy_measure);
+            workers[ii] = algorithm::Worker(start_rank + ii, total_ranks, 0,
+                                            ts, calc, {}, entropy_measure);
         }
         for (int ii = 0; ii < num_thread-1; ii++) {
             threads[ii] = std::thread(&algorithm::Worker::start, workers[ii]);
@@ -311,11 +330,17 @@ void Search::start() {
         throw SearchException("start", "No data loaded, use load_file or load_ndarray.");
     if (!pimpl->measure)
         throw SearchException("start", "No IT Measure selected, use set_measure.");
+    if (!pimpl->parallel_search && pimpl->total_ranks < pimpl->ranks) {
+        throw SearchException("start",
+                              "ranks for this Search cannot be greater than total_ranks.");
+    }
 
     int nvar = pimpl->data->n;
     int tuple_size = pimpl->tuple_size;
-    int num_thread = pimpl->no_thread;
+    int num_thread = pimpl->ranks;
     auto variables = pimpl->data->variables();
+    auto total_ranks = (pimpl->parallel_search) ? pimpl->total_ranks : pimpl->ranks;
+    auto start_rank = pimpl->start_rank;
 
     // load default tuplespace if one has not been set yet
     if (!pimpl->tuple_space.tupleSize()) {
@@ -356,9 +381,9 @@ void Search::start() {
             out_streams.push_back(std::shared_ptr<io::OutputStream>(
                         new io::FileOutputStream(*pimpl->file_output)));
         }
-        workers[ii] = algorithm::Worker(ii, num_thread, pimpl->tuple_limit,
-                                        pimpl->tuple_space, calc, out_streams,
-                                        pimpl->measure);
+        workers[ii] = algorithm::Worker(start_rank + ii, total_ranks,
+                                        pimpl->tuple_limit, pimpl->tuple_space,
+                                        calc, out_streams, pimpl->measure);
         workers[ii].output_all = pimpl->full_output;
     }
 

@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
     // Run computation
     //
     mist.set_probability_algorithm(param.pd_algorithm);
-    mist.set_threads(param.num_threads);
+    mist.set_ranks(param.num_threads);
     mist.set_tuple_size(param.tuple_size);
     mist.set_outfile(param.outfile);
     mist.load_file(param.infile);

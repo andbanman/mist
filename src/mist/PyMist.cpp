@@ -43,7 +43,12 @@ BOOST_PYTHON_MODULE(libmist)
         .add_property("outfile", &Search::get_outfile, &Search::set_outfile)
         .add_property("output_intermediate", &Search::get_output_intermediate,
                                              &Search::set_output_intermediate)
-        .add_property("threads", &Search::get_threads, &Search::set_threads)
+        .add_property("ranks", &Search::get_ranks, &Search::set_ranks)
+        .add_property("start_rank", &Search::get_start_rank,
+                                    &Search::set_start_rank)
+        .add_property("threads", &Search::get_ranks, &Search::set_ranks)
+        .add_property("total_ranks", &Search::get_total_ranks,
+                                     &Search::set_total_ranks)
         .add_property("tuple_limit", &Search::get_tuple_limit,
                                      &Search::set_tuple_limit)
         .add_property("tuple_size", &Search::get_tuple_size,
