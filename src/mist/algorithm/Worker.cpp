@@ -36,7 +36,8 @@ Worker::processTuple(std::vector<int> const& tuple)
     if (this->output_all) {
       out->push(tuple, result);
     } else {
-      out->push(tuple, it::Measure::result_type(result.end() - 1, result.end()));
+      out->push(tuple,
+                it::Measure::result_type(result.end() - 1, result.end()));
     }
   }
 }
@@ -49,7 +50,8 @@ Worker::processTuple(std::vector<int> const& tuple, it::Entropy const& e)
     if (this->output_all) {
       out->push(tuple, result);
     } else {
-      out->push(tuple, it::Measure::result_type(result.end() - 1, result.end()));
+      out->push(tuple,
+                it::Measure::result_type(result.end() - 1, result.end()));
     }
   }
 }

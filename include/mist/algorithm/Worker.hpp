@@ -66,7 +66,7 @@ private:
   groups_t groups;
   group_tuples_t group_tuples;
   int rank;
-  int ranks; // total number of ranks
+  int ranks;  // total number of ranks
   long limit; // maximum number of tuples to process
 
   void processTuple(std::vector<int> const& tuple);

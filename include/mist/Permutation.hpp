@@ -22,111 +22,129 @@ namespace permutation {
  * @tparam D class meeting RandomNumberDistribution requirements
  */
 template<class T2, class G, class D = std::uniform_int_distribution<>>
-void random(T2 &obj, G & gen) {
-    int n = obj.size();
+void
+random(T2& obj, G& gen)
+{
+  int n = obj.size();
 
-    // Fisher-Yates Shuffle algorithm
-    for (std::size_t ii = n - 1; ii > 0; ii--) {
-        D dist(0, ii);
-        std::size_t jj = dist(gen);
-        auto tmp_ii = obj[ii];
-        obj[ii] = obj[jj];
-        obj[jj] = tmp_ii;
-    }
+  // Fisher-Yates Shuffle algorithm
+  for (std::size_t ii = n - 1; ii > 0; ii--) {
+    D dist(0, ii);
+    std::size_t jj = dist(gen);
+    auto tmp_ii = obj[ii];
+    obj[ii] = obj[jj];
+    obj[jj] = tmp_ii;
+  }
 };
 
 /** Permute to the next perumtation in the lexigraphic order.
  *
  * @return True if resulting permutation is not the ordered permutation.
  */
-template <class T2>
-static bool next(T2 &obj) {
-    return std::next_permutation(obj.begin(), obj.end());
+template<class T2>
+static bool
+next(T2& obj)
+{
+  return std::next_permutation(obj.begin(), obj.end());
 };
 
 } // permutation
 
-class PermutationException : public std::exception {
+class PermutationException : public std::exception
+{
 private:
-    std::string msg;
+  std::string msg;
+
 public:
-    PermutationException(std::string const& method, std::string const& msg) :
-        msg("Permutation::" + method + " : " + msg) { }
-    virtual const char* what() const throw() {
-        return msg.c_str();
-    };
+  PermutationException(std::string const& method, std::string const& msg)
+    : msg("Permutation::" + method + " : " + msg)
+  {}
+  virtual const char* what() const throw() { return msg.c_str(); };
 };
 
- /**Permutation of any ordered class.
+/**Permutation of any ordered class.
  */
 template<class T>
-class Permutation : public std::vector<T> {
+class Permutation : public std::vector<T>
+{
 public:
-    // inherit constructors
-    using std::vector<T>::vector;
+  // inherit constructors
+  using std::vector<T>::vector;
 
-     /** Apply permutation P to the source data.
-     *
-     * Time and space complexity O(n)
-     *
-     * @tparam S any ordered container
-     * @return Copy of the permuted source array.
-     */
-    template<typename T2>
-    std::vector<T2> apply(std::vector<T2> const& source) const {
-        std::size_t size = source.size();
+  /** Apply permutation P to the source data.
+   *
+   * Time and space complexity O(n)
+   *
+   * @tparam S any ordered container
+   * @return Copy of the permuted source array.
+   */
+  template<typename T2>
+  std::vector<T2> apply(std::vector<T2> const& source) const
+  {
+    std::size_t size = source.size();
 
-        if (size != this->size())
-            throw PermutationException("apply", "Cannot apply Permutation (length " + std::to_string(this->size()) + ") to vector (length " + std::to_string(size) + ")");
+    if (size != this->size())
+      throw PermutationException(
+        "apply",
+        "Cannot apply Permutation (length " + std::to_string(this->size()) +
+          ") to vector (length " + std::to_string(size) + ")");
 
-        std::vector<T2> permuted(size);
-        for (std::size_t ii = 0; ii < size; ii++)
-            permuted[ii] = std::move(source[this->data()[ii]]);
+    std::vector<T2> permuted(size);
+    for (std::size_t ii = 0; ii < size; ii++)
+      permuted[ii] = std::move(source[this->data()[ii]]);
 
-        return permuted;
-    };
+    return permuted;
+  };
 
-    /** Permute source and save the result in dest
-     */
-    template<typename T2>
-    void apply(T2 const& source, T2 & dest) const {
-        std::size_t size = source.size();
+  /** Permute source and save the result in dest
+   */
+  template<typename T2>
+  void apply(T2 const& source, T2& dest) const
+  {
+    std::size_t size = source.size();
 
-        if (size != this->size())
-            throw PermutationException("apply", "Cannot apply Permutation (length " + std::to_string(this->size()) + ") to vector (length " + std::to_string(size) + ")");
-        if (size != dest.size())
-            throw PermutationException("apply", "Size of src (" + std::to_string(size) + ") not equal dst (" + std::to_string(dest.size()) + ")");
+    if (size != this->size())
+      throw PermutationException(
+        "apply",
+        "Cannot apply Permutation (length " + std::to_string(this->size()) +
+          ") to vector (length " + std::to_string(size) + ")");
+    if (size != dest.size())
+      throw PermutationException("apply",
+                                 "Size of src (" + std::to_string(size) +
+                                   ") not equal dst (" +
+                                   std::to_string(dest.size()) + ")");
 
-        for (std::size_t ii = 0; ii < size; ii++)
-            dest[ii] = std::move(source[this->data()[ii]]);
-    };
+    for (std::size_t ii = 0; ii < size; ii++)
+      dest[ii] = std::move(source[this->data()[ii]]);
+  };
 
-    bool next() {
-        return permutation::next(*this);
-    };
+  bool next() { return permutation::next(*this); };
 
-    template<class G, class D = std::uniform_int_distribution<>>
-    void random(G & gen) {
-        permutation::random<Permutation, G, D>(*this, gen);
-    };
+  template<class G, class D = std::uniform_int_distribution<>>
+  void random(G& gen)
+  {
+    permutation::random<Permutation, G, D>(*this, gen);
+  };
 
-    template<class D = std::uniform_int_distribution<>>
-    void random() {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        permutation::random<Permutation, std::mt19937, D>(*this, gen);
-    };
+  template<class D = std::uniform_int_distribution<>>
+  void random()
+  {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    permutation::random<Permutation, std::mt19937, D>(*this, gen);
+  };
 
-    std::string to_string() {
-        std::string s;
-        int size = this->size();
-        for (int ii = 0; ii < size; ii++) {
-            s += std::to_string(this->data[ii]);
-            if (ii < size - 1)
-                s += ",";
-        }
-        return s;
+  std::string to_string()
+  {
+    std::string s;
+    int size = this->size();
+    for (int ii = 0; ii < size; ii++) {
+      s += std::to_string(this->data[ii]);
+      if (ii < size - 1)
+        s += ",";
     }
+    return s;
+  }
 };
 
 using IntegerPermutation = Permutation<int>;

@@ -19,21 +19,28 @@ using BitsetTable = std::vector<BitsetVariable>;
  * Computes the ProbabilityDistribution using bitwise AND operation and bit
  * counting algorithm.
  */
-class BitsetCounter : public Counter {
+class BitsetCounter : public Counter
+{
 public:
-    BitsetCounter(Variable::tuple const& all_vars);
-    ~BitsetCounter() {};
-    Distribution count(Variable const& var);
-    Distribution count(Variable::tuple const& vars);
-    Distribution count(Variable::tuple const& vars, Variable::indexes const& indexes);
+  BitsetCounter(Variable::tuple const& all_vars);
+  ~BitsetCounter(){};
+  Distribution count(Variable const& var);
+  Distribution count(Variable::tuple const& vars);
+  Distribution count(Variable::tuple const& vars,
+                     Variable::indexes const& indexes);
+
 private:
-    BitsetTable bits;
+  BitsetTable bits;
 };
 
-class BitsetCounterOutOfRange : public std::out_of_range {
+class BitsetCounterOutOfRange : public std::out_of_range
+{
 public:
-    BitsetCounterOutOfRange(std::string const& method, int index, int max) :
-        out_of_range("BitsetCounter::" + method + " : Variable index " + std::to_string(index) + " out of bitset table range, valid range [0," + std::to_string(max) + "]") { };
+  BitsetCounterOutOfRange(std::string const& method, int index, int max)
+    : out_of_range("BitsetCounter::" + method + " : Variable index " +
+                   std::to_string(index) +
+                   " out of bitset table range, valid range [0," +
+                   std::to_string(max) + "]"){};
 };
 
 } // it

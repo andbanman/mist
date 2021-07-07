@@ -1,10 +1,10 @@
 #pragma once
 
-//interfaces
+// interfaces
 #include "cache/Cache.hpp"
 
-//implementations
+// implementations
 #include "cache/Flat.hpp"
-#include "cache/Map.hpp"
 #include "cache/MRU.hpp"
+#include "cache/Map.hpp"
 #include "cache/SmallFiles.hpp"

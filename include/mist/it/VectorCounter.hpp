@@ -10,24 +10,27 @@ namespace it {
  *
  * Counts using standard algorithm.
  */
-class VectorCounter : public Counter {
+class VectorCounter : public Counter
+{
 public:
-    VectorCounter() {};
-    ~VectorCounter() {};
-    Distribution count(Variable const& var);
-    Distribution count(Variable::tuple const& vars);
-    Distribution count(Variable::tuple const& vars, Variable::indexes const& indexes);
+  VectorCounter(){};
+  ~VectorCounter(){};
+  Distribution count(Variable const& var);
+  Distribution count(Variable::tuple const& vars);
+  Distribution count(Variable::tuple const& vars,
+                     Variable::indexes const& indexes);
 };
 
-class VectorCounterException : public std::exception {
+class VectorCounterException : public std::exception
+{
 private:
-    std::string msg;
+  std::string msg;
+
 public:
-    VectorCounterException(std::string const& method, std::string const& msg) :
-        msg("Variable::" + method + " : " + msg) { }
-    virtual const char* what() const throw() {
-        return msg.c_str();
-    };
+  VectorCounterException(std::string const& method, std::string const& msg)
+    : msg("Variable::" + method + " : " + msg)
+  {}
+  virtual const char* what() const throw() { return msg.c_str(); };
 };
 
 } // it

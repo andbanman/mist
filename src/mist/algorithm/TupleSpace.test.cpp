@@ -6,13 +6,14 @@
 using namespace mist;
 using namespace algorithm;
 
-BOOST_AUTO_TEST_CASE(simple_names) {
-    TupleSpace ts;
-    ts.set_names( { "v1", "v2", "v3" } );
-    auto names = ts.names();
-    BOOST_TEST(names[0] == "v1");
-    BOOST_TEST(names[1] == "v2");
-    BOOST_TEST(names[2] == "v3");
+BOOST_AUTO_TEST_CASE(simple_names)
+{
+  TupleSpace ts;
+  ts.set_names({ "v1", "v2", "v3" });
+  auto names = ts.names();
+  BOOST_TEST(names[0] == "v1");
+  BOOST_TEST(names[1] == "v2");
+  BOOST_TEST(names[2] == "v3");
 }
 
 #if 0

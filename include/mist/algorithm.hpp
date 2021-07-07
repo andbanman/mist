@@ -1,5 +1,5 @@
 #pragma once
 
-//implementations
+// implementations
 #include "algorithm/TupleSpace.hpp"
 #include "algorithm/Worker.hpp"

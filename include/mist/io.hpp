@@ -1,9 +1,9 @@
 #pragma once
 
-//interfaces
+// interfaces
 #include "io/OutputStream.hpp"
 
-//implementations
+// implementations
 #include "io/DataMatrix.hpp"
 #include "io/FileOutputStream.hpp"
 #include "io/MapOutputStream.hpp"

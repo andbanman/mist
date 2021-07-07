@@ -137,6 +137,8 @@ This project follows the `Pitchfork Layout <https://github.com/vector-of-bool/pi
 
 Documentation for this project is dynamically generated with Doxygen and Sphinx. Comments in the source following Javadoc style are included in the docs. Non-documented comments, e.g. implementation notes, developer advice, etc. follow standard C++ comment style.
 
+The included ``.clang-format`` file defines the code format, and it can should applied with the ``tools/format.sh`` script.
+
 Credits
 -------
 

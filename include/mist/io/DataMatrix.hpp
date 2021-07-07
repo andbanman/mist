@@ -1,7 +1,7 @@
 #pragma once
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -34,41 +34,43 @@ namespace io {
  *
  * Columns are interpreted as variables with each row a sample.
  */
-class DataMatrix {
+class DataMatrix
+{
 public:
-    // allocate empty matrix
-    DataMatrix(int n, int m, int b);
-    DataMatrix(int data[], int n, int m);
+  // allocate empty matrix
+  DataMatrix(int n, int m, int b);
+  DataMatrix(int data[], int n, int m);
 #ifdef BOOST_PYTHON_EXTENSIONS
-    DataMatrix(np::ndarray const& np);
+  DataMatrix(np::ndarray const& np);
 #endif
-    // each column is a variable
-    DataMatrix(std::string const& filename);
+  // each column is a variable
+  DataMatrix(std::string const& filename);
 
-    mist::Variable getColumn(int i);
-    Variable::tuple variables();
+  mist::Variable getColumn(int i);
+  Variable::tuple variables();
 
-    void write_file(std::string const& filename, char sep);
-    void write_file(std::string const& filename);
+  void write_file(std::string const& filename, char sep);
+  void write_file(std::string const& filename);
 #ifdef BOOST_PYTHON_EXTENSIONS
-    void python_write_file(std::string const& filename);
+  void python_write_file(std::string const& filename);
 #endif
 
-    std::vector<mist::Variable::data_ptr> vectors;
-    std::vector<int> bins;
-    int n;
-    int m;
+  std::vector<mist::Variable::data_ptr> vectors;
+  std::vector<int> bins;
+  int n;
+  int m;
 };
 
-class DataMatrixException : public std::exception {
+class DataMatrixException : public std::exception
+{
 private:
-    std::string msg;
+  std::string msg;
+
 public:
-    DataMatrixException(std::string const& method, std::string const& msg) :
-        msg("DataMatrix::" + method + " : " + msg) { }
-    virtual const char* what() const throw() {
-        return msg.c_str();
-    };
+  DataMatrixException(std::string const& method, std::string const& msg)
+    : msg("DataMatrix::" + method + " : " + msg)
+  {}
+  virtual const char* what() const throw() { return msg.c_str(); };
 };
 
 } // io
