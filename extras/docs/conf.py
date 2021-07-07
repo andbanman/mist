@@ -52,11 +52,15 @@ author = 'Andrew Banman'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 #...
+extensions = [
+        'sphinx.ext.autosectionlabel',
+        'sphinx.ext.autodoc',
+        'breathe',
+]
+autosectionlabel_prefix_document = True
 
 # Older versions of Sphinx require contents.rst by default (.rst implied)
 master_doc = 'index'
-
-extensions = [ "breathe" ]
 
 #...
 

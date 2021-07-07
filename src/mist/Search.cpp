@@ -337,7 +337,8 @@ void Search::start() {
 
     int nvar = pimpl->data->n;
     int tuple_size = pimpl->tuple_size;
-    int num_thread = pimpl->ranks;
+    int num_thread = (!pimpl->ranks) ? std::thread::hardware_concurrency() :
+                        pimpl->ranks;
     auto variables = pimpl->data->variables();
     auto total_ranks = (pimpl->parallel_search) ? pimpl->total_ranks : pimpl->ranks;
     auto start_rank = pimpl->start_rank;
