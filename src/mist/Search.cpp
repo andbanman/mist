@@ -426,8 +426,18 @@ Search::init_caches()
   // fill caches
   for (int cc = 0; cc < ncache; cc++) {
     int d = cc + 1;
-    pimpl->shared_caches[cc] =
-      cache_ptr(new cache::Flat<it::entropy_type>(nvar, d));
+    try {
+      if (pimpl->cache_size_bytes) {
+        pimpl->shared_caches[cc] =
+          cache_ptr(new cache::Flat<it::entropy_type>(nvar, d, pimpl->cache_size_bytes));
+      } else {
+        pimpl->shared_caches[cc] =
+          cache_ptr(new cache::Flat<it::entropy_type>(nvar, d));
+      }
+    } catch (std::bad_alloc const& ba) {
+      // cannot allocate this cache, stop the cache init
+      break;
+    }
     std::vector<algorithm::Worker> workers(num_thread);
     std::vector<std::thread> threads(num_thread - 1);
     std::vector<cache_ptr> caches = { pimpl->shared_caches[cc] };
