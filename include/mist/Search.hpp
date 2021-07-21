@@ -140,6 +140,17 @@ public:
   void set_output_intermediate(bool);
   bool get_output_intermediate();
 
+  /** Enable caching intermediate entropy calculation
+   */
+  void set_cache_enabled(bool);
+  bool get_cache_enabled();
+
+  /** Set maximum size of entropy cache in bytes
+   */
+  void set_cache_size_bytes(unsigned long);
+  unsigned long get_cache_size_bytes();
+
+
   /** Load Data from CSV or tab-separated file.
    *
    * Each column in file is intepreted as a Variable, with each row a

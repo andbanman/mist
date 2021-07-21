@@ -58,6 +58,12 @@ BOOST_PYTHON_MODULE(libmist)
       "tuple_size", &Search::get_tuple_size, &Search::set_tuple_size)
     .add_property(
       "tuple_space", &Search::get_tuple_space, &Search::set_tuple_space)
+    .add_property(
+      "cache_enabled", &Search::get_cache_enabled, &Search::set_cache_enabled)
+    .add_property(
+      "cache_size_bytes",
+      &Search::get_cache_size_bytes,
+      &Search::set_cache_size_bytes)
     .def("start", &Search::start)
     .def("load_ndarray", &Search::load_ndarray)
     .def("load_file", &Search::load_file)

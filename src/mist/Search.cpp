@@ -57,6 +57,7 @@ struct Search::impl
   std::vector<thread_config> threads;
 
   // config
+  unsigned long cache_size_bytes = 0;
   long tuple_limit = 0;
   bool use_cache = true;
   bool full_output = false;
@@ -309,6 +310,28 @@ bool
 Search::get_output_intermediate()
 {
   return pimpl->full_output;
+}
+
+void
+Search::set_cache_enabled(bool enabled)
+{
+  pimpl->use_cache = enabled;
+}
+bool
+Search::get_cache_enabled()
+{
+  return pimpl->use_cache;
+}
+
+void
+Search::set_cache_size_bytes(unsigned long size)
+{
+  pimpl->cache_size_bytes = size;
+}
+unsigned long
+Search::get_cache_size_bytes()
+{
+  return pimpl->cache_size_bytes;
 }
 
 void
