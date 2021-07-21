@@ -387,31 +387,28 @@ Search::init_caches()
   auto entropy_measure = measure_ptr(new it::EntropyMeasure());
   int nvar = pimpl->data->n;
   int num_thread = pimpl->ranks;
+  int ncache = (pimpl->tuple_size > 2) ? 2 : 1;
   auto variables = pimpl->data->variables();
   auto total_ranks =
     (pimpl->parallel_search) ? pimpl->total_ranks : pimpl->ranks;
   auto start_rank = pimpl->start_rank;
+
+  pimpl->shared_caches.resize(ncache);
 
   // By taking each dimension on its own we prevent any two threads from
   // seeing the same tuple. Only safe for pre-sized caches, e.g. Flat, that
   // are thread-safe for unique puts. For other cache types use a single
   // worker.
 
-  // create caches
-  if (pimpl->shared_caches.empty()) {
-    pimpl->shared_caches.resize(2);
-    pimpl->shared_caches[0] =
-      cache_ptr(new cache::Flat<it::entropy_type>(nvar, 1));
-    pimpl->shared_caches[1] =
-      cache_ptr(new cache::Flat<it::entropy_type>(nvar, 2));
-  }
-
   // fill caches
-  for (int d = 1; d < 3; d++) {
+  for (int cc = 0; cc < ncache; cc++) {
+    int d = cc + 1;
+    pimpl->shared_caches[cc] =
+      cache_ptr(new cache::Flat<it::entropy_type>(nvar, d));
     std::vector<algorithm::Worker> workers(num_thread);
     std::vector<std::thread> threads(num_thread - 1);
-    std::vector<cache_ptr> caches = { pimpl->shared_caches[d - 1] };
-    auto ts = algorithm::TupleSpace(nvar, d);
+    std::vector<cache_ptr> caches = { pimpl->shared_caches[cc] };
+    auto ts = algorithm::TupleSpace(nvar, d); //TODO: make it closer to the real TupleSpace ...
     auto calc =
       makeEntropyCalc(pimpl->probability_algorithm, variables, caches);
 
