@@ -236,17 +236,33 @@ Finally, load the TupleSpace object to set the tuple space. Now, when you run th
 
 Note: tuple_space and tuple_size parameters are mutually exclusive. The tuple_space parameter takes precedence.
 
-Genetics Example
-****************
+Preview search space size
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Consider a more realistic example in genetics. Suppose we have a single phenotype of interest and 5000 single nucleotide polymorphisms (SNPs) that might be related. If we are interested only in finding functional dependencies between the SNPs and the single phenotype, then we should exclude tuples containing only SNPs. The following few lines of code specifies this example, assuming our phenotype variable is in position 0 with all other variables being SNPs
+You can count the number of tuples contained the tuple space with `TupleSpace::count_tuples <api.html#_CPPv2NK4mist9algorithm10TupleSpace12count_tuplesEv>`_
 
 ::
 
+    search.tuple_space = mist.TupleSpace(5000, 3)
+    search.tuple_space.count_tuples()
+    # returns 20820835000
+
+
+Genetics Example
+^^^^^^^^^^^^^^^^
+
+Consider a more realistic example in genetics. Suppose we have a single phenotype of interest and 5000 single nucleotide polymorphisms (SNPs) that might be related. If we are interested only in finding functional dependencies between two SNPs and the single phenotype, then we should exclude tuples containing only SNPs. The following few lines of code specifies this example, assuming our phenotype variable is in position 0 with all other variables being SNPs
+
+::
+
+    ts = mist.TupleSpace()
     ts.addVariableGroup("phenotype", [0])
-    ts.addVariableGroup("genotypes", list(range(1, 5000)))
+    ts.addVariableGroup("genotypes", list(range(1, 5001)))
     ts.addVariableGroupTuple(["genotypes", "phenotype"])
     search.tuple_space = ts
+
+    ts.count_tuples()
+    # returns 12497500
 
 This custom search space reduces the size from roughly 20 billion tuples to 12.5 million.
 

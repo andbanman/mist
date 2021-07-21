@@ -31,6 +31,8 @@ BOOST_PYTHON_MODULE(libmist)
     .def_readonly("m", &io::DataMatrix::m);
 
   p::class_<algorithm::TupleSpace>("TupleSpace")
+    .def(p::init<int,int>())
+    .def("count_tuples", &algorithm::TupleSpace::count_tuples)
     .def("addVariableGroup", &algorithm::TupleSpace::pyAddVariableGroup)
     .def("addVariableGroupTuple",
          &algorithm::TupleSpace::pyAddVariableGroupTuple);
