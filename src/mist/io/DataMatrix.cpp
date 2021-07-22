@@ -248,7 +248,7 @@ DataMatrix::write_file(std::string const& filename, char sep)
   }
   for (int ii = 0; ii < nvar; ii++) {
     for (int jj = 0; jj < svar; jj++) {
-      ofs << vectors[ii].get()[jj];
+      ofs << std::to_string(vectors[ii].get()[jj]);
       if (jj < svar - 1 && svar > 1) {
         ofs << sep;
       }

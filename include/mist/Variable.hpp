@@ -8,7 +8,11 @@
 
 namespace mist {
 
-using VariableData = int;
+/** Variable values must be signed so that negative values can represent
+ * missing data, and should be as small as possible to save space for very
+ * large data sets.
+ */
+using VariableData = std::int8_t;
 
 /** Variable wraps a pointer to a data column.
  */

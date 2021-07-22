@@ -76,7 +76,7 @@ Prepare the Data
 
 Data should be prepared to meet these requirements:
 
-- Arranged as *NxM* matrix of 32bit signed integer values, typically with each row a variable.
+- Arranged as *NxM* matrix of 8bit signed integer values, typically with each row a variable.
 - Continuous variables discretized into non-negative integer bins (for best performance, bins should be contiguous and start at 0).
 - Missing values represented by a negative integer.
 
