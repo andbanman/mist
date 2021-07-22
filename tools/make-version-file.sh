@@ -19,7 +19,7 @@ if [[ $git_tag =~ ^v(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)(-[.0-9A-
 else
 	echo "Unable to get git version string, using fallback version" 1>&2
 	# Fallback hardcoded version
-	VERSION=1.0.0
+	VERSION=1.1.0
 fi
 
 # Construct Semantic Version
