@@ -8,5 +8,6 @@ endmacro()
 
 add_pytest(library_load.py)
 add_pytest(DataMatrix.py)
+add_pytest(TupleSpace.py)
 add_pytest(Numpy.py)
 add_pytest(parallel.py)

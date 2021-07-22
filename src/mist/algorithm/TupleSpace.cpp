@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <map>
 #include <set>
 
@@ -18,6 +19,10 @@ TupleSpace::~TupleSpace(){};
 // default space for N variables in tuples size d
 TupleSpace::TupleSpace(int N, int d)
 {
+  if (N == 0 || d == 0) {
+    throw TupleSpaceException("TupleSpace",
+                              "Number of variables and dimension cannot be zero.");
+  }
   tuple_type vars(N);
   for (int ii = 0; ii < N; ii++) {
     vars[ii] = ii;
@@ -106,6 +111,7 @@ TupleSpace::addVariableGroup(std::string const& name,
   }
   std::sort(group.begin(), group.end());
   variableGroups.push_back(group);
+  variableGroupSizes.push_back(group.size());
   int index = variableGroups.size() - 1;
   variableGroupNames.emplace(name, index);
   return index;
@@ -132,6 +138,12 @@ TupleSpace::getVariableGroup(std::string const& name) const
     throw TupleSpaceException("getVariableGroup",
                               "group named " + name + " does not exist.");
   }
+}
+
+std::vector<std::size_t> const&
+TupleSpace::getVariableGroupSizes() const
+{
+    return variableGroupSizes;
 }
 
 std::vector<TupleSpace::tuple_type> const&
@@ -191,3 +203,152 @@ TupleSpace::pyAddVariableGroupTuple(p::list const& list)
   addVariableGroupTuple(groups);
 }
 #endif
+
+static unsigned long long
+binomial(long double n, long double r)
+{
+  if (n == 0 || r == 0 || n == r) {
+    return 1;
+  } else {
+    return (unsigned long long)(lroundl(n / (n - r) / r *
+                          expl(lgammal(n) - lgammal(n - r) - lgammal(r))));
+  }
+}
+
+static std::vector<std::size_t>
+groupSizes(std::vector<TupleSpace::tuple_type> const& groups)
+{
+  std::vector<std::size_t> group_sizes;
+  for (auto& group : groups) {
+    group_sizes.push_back(group.size());
+  }
+  return group_sizes;
+}
+
+static TupleSpace::tuple_type
+groupAppearances(int d, TupleSpace::tuple_type const& group_tuple, int pos)
+{
+  // count group appearances following the current index
+  TupleSpace::tuple_type app(d, 0);
+  for (int gg = pos; gg < group_tuple.size(); gg++) {
+    app[group_tuple[gg]]++;
+  }
+  return app;
+}
+
+static TupleSpace::tuple_type
+groupAppearances(int d, TupleSpace::tuple_type const& group_tuple)
+{
+  return groupAppearances(d, group_tuple, 0);
+}
+
+unsigned long long
+TupleSpace::count_tuples_group_tuple(tuple_type const& group_tuple) const
+{
+  long total = 1;
+  auto const& N = this->variableGroupSizes;
+  auto d = N.size();
+  auto a = groupAppearances(d, group_tuple);
+  for (int ii = 0; ii < d; ii++) {
+    total *= binomial(N[ii], a[ii]);
+  }
+  return total;
+}
+
+unsigned long long
+TupleSpace::count_tuples() const
+{
+  long total = 0;
+  for (auto const& group_tuple : this->variableGroupTuples) {
+    total += count_tuples_group_tuple(group_tuple);
+  }
+  return total;
+}
+
+// Fast-forward to the group containig the tuple at the target position.
+static int
+find_group(long* count, long target, TupleSpace const& ts)
+{
+  auto const& group_tuples = ts.getVariableGroupTuples();
+  int gg = 0;
+  for (auto const& group_tuple : group_tuples) {
+    long skip = ts.count_tuples_group_tuple(group_tuple);
+    if ((skip + *count) > target) {
+      break;
+    }
+    *count += skip;
+    gg++;
+  }
+  return gg;
+}
+
+// Fast-forward the index at position pos so that the target tuple is found by
+// incrementing indexes in the following positions. E.g. if the target 3-tuple
+// is (1,4,8), then
+//
+//      find_index(..., pos=0, ...) returns 1.
+//      find_index(..., pos=1, ...) returns 4.
+//      find_index(..., pos=2, ...) returns 8.
+//
+static int
+find_index(TupleSpace::tuple_type const& group_tuple,
+           int pos,
+           long* count,
+           long target,
+           std::vector<std::size_t> const& N,
+           TupleSpace::tuple_type& starts)
+{
+  int ii = 0;                // index
+  int gi = group_tuple[pos]; // group corresponding to index
+  auto app = groupAppearances(N.size(), group_tuple, pos + 1);
+
+  for (ii = starts[gi]; ii < N[gi]; ii++) {
+    starts[gi] = ii + 1;
+    // count the number of tuples skipped over by incrementing index
+    // for last index skip = 1 (could be optimized with a special case)
+    long skip = 1;
+    for (int gg = 0; gg < N.size(); gg++) {
+      // binomial combination reduces to linear when appearances == 1
+      long f = 1;
+      for (int kk = 0; kk < app[gg]; kk++) {
+        skip = skip * (N[gg] - starts[gg] - kk);
+        f *= (kk + 1);
+      }
+      skip /= f;
+    }
+    if ((skip + *count) > target) {
+      break;
+    }
+    *count += skip;
+  }
+  if (ii >= N[gi]) {
+    throw TupleSpaceException("find_index", "Failed to FFW index, out of range");
+  }
+  return ii;
+}
+
+
+TupleSpace::tuple_type
+TupleSpace::find_tuple(long target) const
+{
+  // The fast-forward algorithm maintains a skipped tuple count so that when
+  // the count equals the target count we have found the target tuple.
+  long count = 0;
+
+  auto const& N = this->variableGroupSizes;
+  auto const& group_tuples = this->variableGroupTuples;
+
+  // scan ahead to the group tuple that generates the target tuple
+  int gg = find_group(&count, target, *this);
+  auto tuple_size = group_tuples[gg].size();
+  std::vector<int> ret(tuple_size + 1);
+  ret[0] = gg;
+
+  // scan to the target tuple
+  tuple_type starts(N.size(), 0);
+  for (int ii = 0; ii < tuple_size; ii++) {
+    ret[ii + 1] = find_index(group_tuples[gg], ii, &count, target, N, starts);
+  }
+
+  return ret;
+}

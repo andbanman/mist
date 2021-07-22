@@ -24,13 +24,6 @@ public:
   using measure_ptr = std::shared_ptr<it::Measure>;
 
   // Typedefs for convenience expressing the algorithm
-  using group_t = TupleSpace::tuple_type;
-  using groups_t = std::vector<group_t>;
-  using group_tuple_t = TupleSpace::tuple_type;
-  using group_tuples_t = std::vector<group_tuple_t>;
-  using appearances_t = std::vector<int>;
-  using starts_t = std::vector<int>;
-  using group_sizes_t = std::vector<int>;
 
   ~Worker();
   Worker();
@@ -63,8 +56,6 @@ private:
   entropy_calc_ptr calc;
   std::vector<output_stream_ptr> out_streams;
   measure_ptr measure;
-  groups_t groups;
-  group_tuples_t group_tuples;
   int rank;
   int ranks;  // total number of ranks
   long limit; // maximum number of tuples to process

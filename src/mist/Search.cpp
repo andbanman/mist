@@ -9,6 +9,7 @@
 #include "Search.hpp"
 #include "algorithm/TupleSpace.hpp"
 #include "algorithm/Worker.hpp"
+#include "io/DataMatrix.hpp"
 #include "io/MapOutputStream.hpp"
 #include "it/BitsetCounter.hpp"
 #include "it/Entropy.hpp"
@@ -57,6 +58,7 @@ struct Search::impl
   std::vector<thread_config> threads;
 
   // config
+  unsigned long cache_size_bytes = 0;
   long tuple_limit = 0;
   bool use_cache = true;
   bool full_output = false;
@@ -312,14 +314,54 @@ Search::get_output_intermediate()
 }
 
 void
-Search::load_file(std::string const& filename)
+Search::set_cache_enabled(bool enabled)
+{
+  pimpl->use_cache = enabled;
+}
+bool
+Search::get_cache_enabled()
+{
+  return pimpl->use_cache;
+}
+
+void
+Search::set_cache_size_bytes(unsigned long size)
+{
+  pimpl->cache_size_bytes = size;
+}
+unsigned long
+Search::get_cache_size_bytes()
+{
+  return pimpl->cache_size_bytes;
+}
+
+void
+Search::_load_file(std::string const& filename, bool rowmajor)
 {
   // TODO invalidate previous results
-  pimpl->data = data_ptr(new io::DataMatrix(filename));
+  pimpl->data = data_ptr(new io::DataMatrix(filename, rowmajor));
   if (!pimpl->data) {
     throw SearchException(
       "load_file", "Failed to create DataMatrix from file '" + filename + "'");
   }
+}
+
+void
+Search::load_file(std::string const& filename)
+{
+  _load_file(filename, true);
+}
+
+void
+Search::load_file_row_major(std::string const& filename)
+{
+  _load_file(filename, true);
+}
+
+void
+Search::load_file_column_major(std::string const& filename)
+{
+  _load_file(filename, false);
 }
 
 #if BOOST_PYTHON_EXTENSIONS
@@ -385,33 +427,40 @@ void
 Search::init_caches()
 {
   auto entropy_measure = measure_ptr(new it::EntropyMeasure());
-  int nvar = pimpl->data->n;
+  int nvar = pimpl->data->get_nvar();
   int num_thread = pimpl->ranks;
+  int ncache = (pimpl->tuple_size > 2) ? 2 : 1;
   auto variables = pimpl->data->variables();
   auto total_ranks =
     (pimpl->parallel_search) ? pimpl->total_ranks : pimpl->ranks;
   auto start_rank = pimpl->start_rank;
+
+  pimpl->shared_caches.resize(ncache);
 
   // By taking each dimension on its own we prevent any two threads from
   // seeing the same tuple. Only safe for pre-sized caches, e.g. Flat, that
   // are thread-safe for unique puts. For other cache types use a single
   // worker.
 
-  // create caches
-  if (pimpl->shared_caches.empty()) {
-    pimpl->shared_caches.resize(2);
-    pimpl->shared_caches[0] =
-      cache_ptr(new cache::Flat<it::entropy_type>(nvar, 1));
-    pimpl->shared_caches[1] =
-      cache_ptr(new cache::Flat<it::entropy_type>(nvar, 2));
-  }
-
   // fill caches
-  for (int d = 1; d < 3; d++) {
+  for (int cc = 0; cc < ncache; cc++) {
+    int d = cc + 1;
+    try {
+      if (pimpl->cache_size_bytes) {
+        pimpl->shared_caches[cc] =
+          cache_ptr(new cache::Flat<it::entropy_type>(nvar, d, pimpl->cache_size_bytes));
+      } else {
+        pimpl->shared_caches[cc] =
+          cache_ptr(new cache::Flat<it::entropy_type>(nvar, d));
+      }
+    } catch (std::bad_alloc const& ba) {
+      // cannot allocate this cache, stop the cache init
+      break;
+    }
     std::vector<algorithm::Worker> workers(num_thread);
     std::vector<std::thread> threads(num_thread - 1);
-    std::vector<cache_ptr> caches = { pimpl->shared_caches[d - 1] };
-    auto ts = algorithm::TupleSpace(nvar, d);
+    std::vector<cache_ptr> caches = { pimpl->shared_caches[cc] };
+    auto ts = algorithm::TupleSpace(nvar, d); //TODO: make it closer to the real TupleSpace ...
     auto calc =
       makeEntropyCalc(pimpl->probability_algorithm, variables, caches);
 
@@ -448,7 +497,7 @@ Search::start()
       "start", "ranks for this Search cannot be greater than total_ranks.");
   }
 
-  int nvar = pimpl->data->n;
+  int nvar = pimpl->data->get_nvar();
   int tuple_size = pimpl->tuple_size;
   int num_thread =
     (!pimpl->ranks) ? std::thread::hardware_concurrency() : pimpl->ranks;

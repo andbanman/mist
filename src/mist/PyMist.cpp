@@ -25,12 +25,15 @@ BOOST_PYTHON_MODULE(libmist)
 
   p::class_<io::DataMatrix>("DataMatrix", p::init<int, int, int>())
     .def(p::init<std::string>())
+    .def(p::init<std::string, bool>())
     .def(p::init<np::ndarray>())
     .def("write_file", &io::DataMatrix::python_write_file)
-    .def_readonly("n", &io::DataMatrix::n)
-    .def_readonly("m", &io::DataMatrix::m);
+    .add_property("n", &io::DataMatrix::get_nvar)
+    .add_property("m", &io::DataMatrix::get_svar);
 
   p::class_<algorithm::TupleSpace>("TupleSpace")
+    .def(p::init<int,int>())
+    .def("count_tuples", &algorithm::TupleSpace::count_tuples)
     .def("addVariableGroup", &algorithm::TupleSpace::pyAddVariableGroup)
     .def("addVariableGroupTuple",
          &algorithm::TupleSpace::pyAddVariableGroupTuple);
@@ -56,9 +59,17 @@ BOOST_PYTHON_MODULE(libmist)
       "tuple_size", &Search::get_tuple_size, &Search::set_tuple_size)
     .add_property(
       "tuple_space", &Search::get_tuple_space, &Search::set_tuple_space)
+    .add_property(
+      "cache_enabled", &Search::get_cache_enabled, &Search::set_cache_enabled)
+    .add_property(
+      "cache_size_bytes",
+      &Search::get_cache_size_bytes,
+      &Search::set_cache_size_bytes)
     .def("start", &Search::start)
     .def("load_ndarray", &Search::load_ndarray)
     .def("load_file", &Search::load_file)
+    .def("load_file_row_major", &Search::load_file_row_major)
+    .def("load_file_column_major", &Search::load_file_column_major)
     .def("start", &Search::python_start)
     .def("version", &Search::version);
 }

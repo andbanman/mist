@@ -24,9 +24,9 @@ BOOST_AUTO_TEST_CASE(DataMatrix_constructor_array)
   int kk = 0;
   for (int ii = 0; ii < n; ii++) {
     for (int jj = 0; jj < m; jj++) {
-      // std::cout << ii << "," << jj << "," << test_matrix.getColumn(ii)[jj] <<
+      // std::cout << ii << "," << jj << "," << test_matrix.get_variable(ii)[jj] <<
       // std::endl;
-      BOOST_TEST(test_matrix.getColumn(ii)[jj] == kk);
+      BOOST_TEST(test_matrix.get_variable(ii)[jj] == kk);
       kk++;
     }
   }

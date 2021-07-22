@@ -33,7 +33,7 @@ public:
   {}
 };
 
-/** Fixed sized associative cache with least recently added eviction.
+/** Fixed sized associative cache
  */
 template<class V>
 class Flat : public Cache<V>
@@ -54,6 +54,20 @@ public:
     this->data.resize(stride);
     // TODO hardcoded for DOUBLE types, but should use template
     this->data.assign(stride, DOUBLE_UNSET);
+  };
+
+  Flat(std::size_t nvar, std::size_t dimension, std::size_t maxmem)
+  {
+    std::size_t stride = 1;
+    for (int ii = 0; ii < dimension; ii++) {
+      this->strides.push_back(stride);
+      stride *= nvar;
+    }
+    unsigned long maxsize = maxmem / sizeof(val_type);
+    unsigned long size = (stride > maxsize) ? maxsize : stride;
+    this->data.resize(size);
+    // TODO hardcoded for DOUBLE types, but should use template
+    this->data.assign(size, DOUBLE_UNSET);
   };
 
   // TODO template for value types
