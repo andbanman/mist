@@ -38,16 +38,21 @@ class DataMatrix
 {
 public:
   // allocate empty matrix
-  DataMatrix(int n, int m, int b);
-  DataMatrix(int data[], int n, int m);
+  DataMatrix(int ncol, int nrow, int b);
+  DataMatrix(int data[], int ncol, int nrow);
 #ifdef BOOST_PYTHON_EXTENSIONS
   DataMatrix(np::ndarray const& np);
 #endif
   // each column is a variable
   DataMatrix(std::string const& filename);
+  DataMatrix(std::string const& filename, bool rowmajor);
 
-  mist::Variable getColumn(int i);
+  Variable get_variable(int i);
   Variable::tuple variables();
+  unsigned long get_nvar() const;
+  unsigned long get_svar() const;
+  unsigned long get_ncol() const;
+  unsigned long get_nrow() const;
 
   void write_file(std::string const& filename, char sep);
   void write_file(std::string const& filename);
@@ -57,8 +62,11 @@ public:
 
   std::vector<mist::Variable::data_ptr> vectors;
   std::vector<int> bins;
-  int n;
-  int m;
+private:
+  std::size_t ncol;
+  std::size_t nrow;
+  std::size_t nvar;
+  std::size_t svar;
 };
 
 class DataMatrixException : public std::exception

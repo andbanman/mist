@@ -9,6 +9,7 @@
 #include "Search.hpp"
 #include "algorithm/TupleSpace.hpp"
 #include "algorithm/Worker.hpp"
+#include "io/DataMatrix.hpp"
 #include "io/MapOutputStream.hpp"
 #include "it/BitsetCounter.hpp"
 #include "it/Entropy.hpp"
@@ -335,14 +336,32 @@ Search::get_cache_size_bytes()
 }
 
 void
-Search::load_file(std::string const& filename)
+Search::_load_file(std::string const& filename, bool rowmajor)
 {
   // TODO invalidate previous results
-  pimpl->data = data_ptr(new io::DataMatrix(filename));
+  pimpl->data = data_ptr(new io::DataMatrix(filename, rowmajor));
   if (!pimpl->data) {
     throw SearchException(
       "load_file", "Failed to create DataMatrix from file '" + filename + "'");
   }
+}
+
+void
+Search::load_file(std::string const& filename)
+{
+  _load_file(filename, true);
+}
+
+void
+Search::load_file_row_major(std::string const& filename)
+{
+  _load_file(filename, true);
+}
+
+void
+Search::load_file_column_major(std::string const& filename)
+{
+  _load_file(filename, false);
 }
 
 #if BOOST_PYTHON_EXTENSIONS
@@ -408,7 +427,7 @@ void
 Search::init_caches()
 {
   auto entropy_measure = measure_ptr(new it::EntropyMeasure());
-  int nvar = pimpl->data->n;
+  int nvar = pimpl->data->get_nvar();
   int num_thread = pimpl->ranks;
   int ncache = (pimpl->tuple_size > 2) ? 2 : 1;
   auto variables = pimpl->data->variables();
@@ -478,7 +497,7 @@ Search::start()
       "start", "ranks for this Search cannot be greater than total_ranks.");
   }
 
-  int nvar = pimpl->data->n;
+  int nvar = pimpl->data->get_nvar();
   int tuple_size = pimpl->tuple_size;
   int num_thread =
     (!pimpl->ranks) ? std::thread::hardware_concurrency() : pimpl->ranks;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "io/DataMatrix.hpp"
 #include "io/MapOutputStream.hpp"
 #include <memory>
 #include <stdexcept>
@@ -41,6 +42,7 @@ private:
   std::unique_ptr<impl> pimpl;
 
   void init_caches();
+  void _load_file(std::string const& filename, bool is_row_major);
 
 public:
   Search();
@@ -150,16 +152,19 @@ public:
   void set_cache_size_bytes(unsigned long);
   unsigned long get_cache_size_bytes();
 
-
   /** Load Data from CSV or tab-separated file.
    *
-   * Each column in file is intepreted as a Variable, with each row a
-   * instance.
-   *
    * @param filename path to file
+   * @param is_row_major Set to true for row-major variables
    * @pre each row has an equal number of columns.
    */
+  /** Load Data from CSV or tab-separated file.
+   *
+   * By defualt, the file is loaded in row-major order, i.e. each row is a variable.
+   */
   void load_file(std::string const& filename);
+  void load_file_row_major(std::string const& filename);
+  void load_file_column_major(std::string const& filename);
 
 #if BOOST_PYTHON_EXTENSIONS
   /** Load Data from Python Numpy::ndarray.

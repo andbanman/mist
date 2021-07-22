@@ -11,13 +11,13 @@ def test_parallel_2():
 
     # non-parallel
     mist = pld.Search()
-    mist.load_file(filename)
+    mist.load_file_column_major(filename)
     mist.tuple_size = 3
     res = mist.start()
 
     # first ranks
     mist = pld.Search()
-    mist.load_file(filename)
+    mist.load_file_column_major(filename)
     mist.tuple_size = 3
     mist.ranks = ranks_per
     mist.total_ranks = total_ranks
@@ -25,7 +25,7 @@ def test_parallel_2():
 
     # second ranks
     mist = pld.Search()
-    mist.load_file(filename)
+    mist.load_file_column_major(filename)
     mist.tuple_size = 3
     mist.ranks = ranks_per
     mist.total_ranks = total_ranks
@@ -47,7 +47,7 @@ def test_parallel_3_same_obj():
 
     # non-parallel
     mist = pld.Search()
-    mist.load_file(filename)
+    mist.load_file_column_major(filename)
     mist.tuple_size = 3
     res = mist.start()
 

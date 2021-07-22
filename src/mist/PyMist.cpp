@@ -25,10 +25,11 @@ BOOST_PYTHON_MODULE(libmist)
 
   p::class_<io::DataMatrix>("DataMatrix", p::init<int, int, int>())
     .def(p::init<std::string>())
+    .def(p::init<std::string, bool>())
     .def(p::init<np::ndarray>())
     .def("write_file", &io::DataMatrix::python_write_file)
-    .def_readonly("n", &io::DataMatrix::n)
-    .def_readonly("m", &io::DataMatrix::m);
+    .add_property("n", &io::DataMatrix::get_nvar)
+    .add_property("m", &io::DataMatrix::get_svar);
 
   p::class_<algorithm::TupleSpace>("TupleSpace")
     .def(p::init<int,int>())
@@ -67,6 +68,8 @@ BOOST_PYTHON_MODULE(libmist)
     .def("start", &Search::start)
     .def("load_ndarray", &Search::load_ndarray)
     .def("load_file", &Search::load_file)
+    .def("load_file_row_major", &Search::load_file_row_major)
+    .def("load_file_column_major", &Search::load_file_column_major)
     .def("start", &Search::python_start)
     .def("version", &Search::version);
 }

@@ -1,20 +1,21 @@
 import libmist as pld
 import numpy as np
+import numpy_helper as nh
 
 filename = "sample_data.csv"
 
 # TODO good tests
 precision = 0.00001
 
-def load_column_order_numpy(filename):
+def load_row_major_numpy(filename):
     x = np.genfromtxt(filename, delimiter=',', dtype='int32')
-    x = np.transpose(x)
-    x = np.copy(x, order='C')
+    #x = np.transpose(x)
+    #x = np.copy(x, order='C')
     return x
 
 def test_compute_in_file_out_numpy():
     mist = pld.Search()
-    mist.load_file(filename)
+    mist.load_file_column_major(filename)
     mist.threads = 4
     mist.tuple_size = 2
     res = mist.start()
@@ -31,7 +32,7 @@ def test_compute_in_file_out_numpy():
 
 def test_compute_in_numpy_out_numpy():
     mist = pld.Search()
-    x = load_column_order_numpy(filename)
+    x = nh.load_column_major_numpy(filename)
     mist.load_ndarray(x)
     mist.threads = 4
     mist.tuple_size = 2

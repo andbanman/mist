@@ -13,14 +13,17 @@ issep(char c)
   return (std::isspace(c) || c == ',');
 }
 
-DataMatrix::DataMatrix(int n, int m, int b)
-  : n(n)
-  , m(m)
+// each column a variable
+DataMatrix::DataMatrix(int ncol, int nrow, int b)
+  : ncol(ncol)
+  , nrow(nrow)
+  , nvar(ncol)
+  , svar(nrow)
 {
-  for (int ii = 0; ii < n; ii++) {
+  for (int ii = 0; ii < ncol; ii++) {
     vectors.push_back(
-      mist::Variable::data_ptr(new mist::Variable::data_type[m]));
-    for (int jj = 0; jj < m; jj++) {
+      mist::Variable::data_ptr(new mist::Variable::data_type[nrow]));
+    for (int jj = 0; jj < nrow; jj++) {
       vectors[ii].get()[jj] = 0;
     }
     if (!b) {
@@ -33,17 +36,20 @@ DataMatrix::DataMatrix(int n, int m, int b)
   }
 }
 
-DataMatrix::DataMatrix(int data[], int n, int m)
-  : n(n)
-  , m(m)
+// each column a variable
+DataMatrix::DataMatrix(int data[], int ncol, int nrow)
+  : ncol(ncol)
+  , nrow(nrow)
+  , nvar(ncol)
+  , svar(nrow)
 {
-  for (int ii = 0; ii < n; ii++) {
+  for (int ii = 0; ii < ncol; ii++) {
     vectors.push_back(
-      mist::Variable::data_ptr(new mist::Variable::data_type[m]));
+      mist::Variable::data_ptr(new mist::Variable::data_type[nrow]));
     int bin = 0;
-    for (int jj = 0; jj < m; jj++) {
-      bin = std::max(bin, data[m * ii + jj] + 1);
-      vectors[ii].get()[jj] = data[m * ii + jj];
+    for (int jj = 0; jj < nrow; jj++) {
+      bin = std::max(bin, data[nrow * ii + jj] + 1);
+      vectors[ii].get()[jj] = data[nrow * ii + jj];
     }
     if (!bin) {
       throw DataMatrixException("DataMatrix",
@@ -70,43 +76,40 @@ DataMatrix::DataMatrix(np::ndarray const& np)
         ", check numpy.ndarray.dtype");
   }
 
-  // Verify memory layout
-  auto flags = np.get_flags();
-  if (!(flags & np::ndarray::bitflag::C_CONTIGUOUS)) {
-    throw DataMatrixException(
-      "DataMatrix",
-      "Input ndarray is not C contiguous, check numpy.ndarray.flags");
-  }
-
   auto data = (Variable::data_type*)np.get_data();
-  auto n = np.shape(0);
-  auto m = np.shape(1);
-  for (int ii = 0; ii < n; ii++) {
-    auto column_ptr = data + ii * m;
+  nrow = np.shape(0);
+  ncol = np.shape(1);
+
+  bool rowmajor = np.get_flags() & np::ndarray::bitflag::C_CONTIGUOUS;
+  nvar = (rowmajor) ? nrow : ncol;
+  svar = (rowmajor) ? ncol : nrow;
+
+  for (int ii = 0; ii < nvar; ii++) {
+    auto var_ptr = data + ii * svar;
     // we don't own the memory, so use an empty shared pointer
-    vectors.push_back(Variable::data_ptr(Variable::data_ptr(), column_ptr));
+    vectors.push_back(Variable::data_ptr(Variable::data_ptr(), var_ptr));
     int bin = 0;
-    for (int jj = 0; jj < m; jj++) {
-      bin = std::max(bin, column_ptr[jj] + 1);
+    for (int jj = 0; jj < svar; jj++) {
+      bin = std::max(bin, var_ptr[jj] + 1);
     }
     if (!bin) {
+      // sanity check, probably never get here
       throw DataMatrixException("DataMatrix",
-                                "Column " + std::to_string(ii) +
+                                "Variable " + std::to_string(ii) +
                                   " has zero value bins. Remove column from "
                                   "input data before proceeding.");
     }
     bins.push_back(bin);
   }
-  this->n = n;
-  this->m = m;
 }
 #endif
 
-// each column is a variable
-DataMatrix::DataMatrix(std::string const& filename)
+DataMatrix::DataMatrix(std::string const& filename, bool rowmajor)
+  : nrow(0)
+  , ncol(0)
+  , nvar(0)
+  , svar(0)
 {
-  this->m = 0;
-  this->n = 0;
   std::string line;
   std::string data_line;
 
@@ -118,7 +121,7 @@ DataMatrix::DataMatrix(std::string const& filename)
                                 "': " + std::strerror(errno));
   }
 
-  // count number of measurements
+  // count number of rows
   auto data_start_pos = ifs.tellg();
   bool skip = true;
   while (std::getline(ifs, line)) {
@@ -139,44 +142,49 @@ DataMatrix::DataMatrix(std::string const& filename)
         data_line = line;
       }
     }
-    this->m++;
+    nrow++;
   }
 
-  // count number of variables in last line
-  this->n++;
+  // count number of columns
+  ncol++;
   char p = line[0];
   for (char c : data_line) {
     if ((issep(c) && !issep(p)) || c == '\n') {
-      this->n++;
+      ncol++;
     }
     p = c;
   }
 
+  svar = (rowmajor) ? ncol : nrow;
+  nvar = (rowmajor) ? nrow : ncol;
+
   // initialize vectors
-  for (int ii = 0; ii < n; ii++) {
+  for (int ii = 0; ii < nvar; ii++) {
     vectors.push_back(mist::Variable::data_ptr(
-      new mist::Variable::data_type[m])); // TODO: valgrind error on new
+      new mist::Variable::data_type[svar])); // TODO: valgrind error on new
   }
 
   // Read data into matrix
   ifs.clear(); // XXX need to clear bits after getline goes through end
   ifs.seekg(data_start_pos, std::ios::beg);
-  int ii = 0;
+  int row = 0;
   while (std::getline(ifs, line)) {
-    // each line (ii) parse the value of each vector (jj)
-    int jj = 0;
+    // each line (row) parse the value of each vector (col)
+    int col = 0;
     int pos = 0;
+    int* vec = (rowmajor) ? &row : &col; //this vector
+    int* elm = (rowmajor) ? &col : &row; //this element of vector
     char int_string[100];
     for (auto c : line) {
       if (!std::isdigit(c) && pos) {
-        vectors[jj].get()[ii] = std::atoi(int_string);
+        vectors[*vec].get()[*elm] = std::atoi(int_string);
         int_string[0] = '\0';
         pos = 0;
-        jj++;
-        if (jj >= n) {
+        col++;
+        if (col >= ncol) {
           throw DataMatrixException(
             "DataMatrix",
-            "Error loading file " + filename + ":" + std::to_string(ii) +
+            "Error loading file " + filename + ":" + std::to_string(row) +
               " - number of columns greater than expected.");
         }
       } else if (std::isdigit(c)) {
@@ -186,33 +194,46 @@ DataMatrix::DataMatrix(std::string const& filename)
       }
     }
     if (pos) {
-      vectors[jj].get()[ii] = std::atoi(int_string);
+      vectors[*vec].get()[*elm] = std::atoi(int_string);
+      col++;
     }
-    ii++;
+    if (col != ncol) {
+      throw DataMatrixException(
+        "DataMatrix",
+        "Error loading file " + filename + ":" + std::to_string(row) +
+          " - number of columns less than expected.");
+    }
+    row++;
   }
 
   // determine number of bins for each variable
   for (auto& v : vectors) {
     int bin = 0;
-    for (int ii = 0; ii < this->m; ii++) {
+    for (int ii = 0; ii < svar; ii++) {
       bin = std::max(bin, v.get()[ii] + 1);
     }
     bins.push_back(bin);
   }
 }
 
-mist::Variable
-DataMatrix::getColumn(int i)
+// Default rowmajor is a variable
+DataMatrix::DataMatrix(std::string const& filename)
+  : DataMatrix::DataMatrix(filename, true)
 {
-  return mist::Variable(vectors[i], m, i, bins[i]);
+}
+
+Variable
+DataMatrix::get_variable(int i)
+{
+  return mist::Variable(vectors[i], svar, i, bins[i]);
 };
 
 Variable::tuple
 DataMatrix::variables()
 {
-  Variable::tuple ret(n);
-  for (int ii = 0; ii < n; ii++) {
-    ret[ii] = this->getColumn(ii);
+  Variable::tuple ret(nvar);
+  for (int ii = 0; ii < nvar; ii++) {
+    ret[ii] = this->get_variable(ii);
   }
   return ret;
 }
@@ -225,16 +246,21 @@ DataMatrix::write_file(std::string const& filename, char sep)
     throw DataMatrixException(
       "write_file", "Could not open file " + filename + " for writing");
   }
-  for (int ii = 0; ii < m; ii++) {
-    for (int jj = 0; jj < n; jj++) {
-      ofs << vectors[jj].get()[ii];
-      if (jj < n - 1 && n > 1) {
+  for (int ii = 0; ii < nvar; ii++) {
+    for (int jj = 0; jj < svar; jj++) {
+      ofs << vectors[ii].get()[jj];
+      if (jj < svar - 1 && svar > 1) {
         ofs << sep;
       }
     }
     ofs << std::endl;
   }
 }
+
+unsigned long DataMatrix::get_nvar() const { return nvar; }
+unsigned long DataMatrix::get_svar() const { return svar; }
+unsigned long DataMatrix::get_nrow() const { return nrow; }
+unsigned long DataMatrix::get_ncol() const { return ncol; }
 
 void
 DataMatrix::write_file(std::string const& filename)

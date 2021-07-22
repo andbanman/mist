@@ -8,7 +8,7 @@ This guide explains how to prepare data for Mist, set up and execute a search, a
 3. Define the search space
 4. Compute
 
-Here we assume that we have a set of variables representing the components of a system we study and a set of samples representing multiple measurements of these variables. So, input data is represented by a matrix, where each column is a variable and each row is a sample, e.g., a measurement or subject. A variable tuple is a small combination of variables. The set of all variable tuples is the search space. Mist efficiently traverses the search space and computes the Information Theory measure for each tuple, which in turn allows us to estimate the strength of the dependence among variables in the tuple.
+Here we assume that we have a set of variables representing the components of a system we study and a set of samples representing multiple measurements of these variables. So, input data is represented by a matrix, where each row is a variable and each row is a sample, e.g., a measurement or subject. A variable tuple is a small combination of variables. The set of all variable tuples is the search space. Mist efficiently traverses the search space and computes the Information Theory measure for each tuple, which in turn allows us to estimate the strength of the dependence among variables in the tuple.
 
 The procedure of defining a search space and computing the IT measure for each tuple in the space is simply called a search. Mist uses a parallel algorithm to divide the search among computing threads. The algorithm can be tuned to improve performance for different kinds of searches.
 
@@ -76,15 +76,13 @@ Prepare the Data
 
 Data should be prepared to meet these requirements:
 
-- Arranged as *NxM* matrix, where each column is a variable and each row is a sample.
+- Arranged as *NxM* matrix of 32bit signed integer values, typically with each row a variable.
 - Continuous variables discretized into non-negative integer bins (for best performance, bins should be contiguous and start at 0).
 - Missing values represented by a negative integer.
 
-The program fails with an exception if a requirement is not met.
+Data can be parsed in row-major (the default, preferred) or column-major order. In row-major order each row is a variable; in column-major order each column is a variable.
 
-Mist does not modify the input data to fit the requirements. We don’t wish to make any invisible changes to the data that could a) inadvertently introduce bias into the data, or b) make it difficult to reproduce or validate results outside Mist.
-
-The data can be loaded from a CSV file ...
+Data can be read from a CSV file, and the parse order is set explicitly
 
 ::
 
@@ -92,14 +90,21 @@ The data can be loaded from a CSV file ...
     search = libmist.Mist()
     search.load_file('/path/to/data.csv')
 
-... or a Python `Numpy ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_.
+    # parse order explicitly set with these methods
+    # search.load_file_row_major('/path/to/data.csv')
+    # search.load_file_column_major('/path/to/data.csv')
+
+
+or a Python `Numpy ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_. The parse order is determined by the memory layout: if the array is ``C_CONTIGUOUS`` (the default) then it is parsed in row-major order; if the array is ``F_CONTIGUOUS`` then it is parsed in column-major order.
 
 ::
 
     x = numpy.ndarray(...)
     search.load_ndarray(x)
 
-Mist does not copy the input ndarray. As such the the array must have signed integer data type and C-style memory layout. If either is wrong the program will throw an error.
+    # parse order determined by x.flags
+
+The ndarray is not copied, and so it must exactly match the expected format. Mist with an exception if a requirement is not met [1]_.
 
 
 Missing values
@@ -145,7 +150,7 @@ An estimate of the joint entropy of two or more variables, computed using the na
 Symmetric Delta
 ^^^^^^^^^^^^^^^
 
-A novel symmetric measure of functional dependence constructed from joint entropies [Galas2014]_. Values are always reported as positive real numbers [1]_, with larger values indicating stronger signal. Missing values may cause a sign change for low-signal tuples, but these can be ignored.
+A novel symmetric measure of functional dependence constructed from joint entropies [Galas2014]_. Values are always reported as positive real numbers [2]_, with larger values indicating stronger signal. Missing values may cause a sign change for low-signal tuples, but these can be ignored.
 
 
 Define the search Space
@@ -183,7 +188,7 @@ You can define a smaller search space using the `TupleSpace <api.html#_CPPv2N4mi
 
 **2. Define Variable Groups**
 
-A *Variable Group* is simply a named set of variables. Variables are referenced by their column position, *[0,N-1]*. Add a group with `TupleSpace::addVariableGroup <api.html#_CPPv2N4mist9algorithm10TupleSpace21addVariableGroupTupleERNSt6vectorINSt6stringEEE>`_. Variable groups are usually disjoint, but they do not need to be ordered or contiguous.
+A *Variable Group* is simply a named set of variables. Variables are referenced by their position in the matrix, *[0,N-1]*. Add a group with `TupleSpace::addVariableGroup <api.html#_CPPv2N4mist9algorithm10TupleSpace21addVariableGroupTupleERNSt6vectorINSt6stringEEE>`_. Variable groups are usually disjoint, but they do not need to be ordered or contiguous.
 
 ::
 
@@ -310,4 +315,5 @@ It's worth experimenting with this option if your variable have three or fewer b
 
 Notes
 -----
-.. [1] Symmetric Delta, as described in [Galas2014]_, has negative sign for odd-dimension tuples. In Mist we give the magnitude always so it is clear what tail of the distribution holds the signal.
+.. [1] Mist does not modify the input data to fit the requirements. We don’t wish to make any invisible changes to the data that could a) inadvertently introduce bias into the data, or b) make it difficult to reproduce or validate results outside Mist.
+.. [2] Symmetric Delta, as described in [Galas2014]_, has negative sign for odd-dimension tuples. In Mist we give the magnitude always so it is clear what tail of the distribution holds the signal.
