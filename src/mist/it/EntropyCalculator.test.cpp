@@ -7,7 +7,7 @@
 
 using namespace mist;
 
-int test_data[12] = { 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0 };
+io::DataMatrix::data_t test_data[12] = { 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0 };
 
 BOOST_AUTO_TEST_CASE(EntropyCalculator_constructor_default)
 {

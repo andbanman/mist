@@ -14,16 +14,16 @@ issep(char c)
 }
 
 // each column a variable
-DataMatrix::DataMatrix(int ncol, int nrow, int b)
+DataMatrix::DataMatrix(std::size_t ncol, std::size_t nrow, data_t b)
   : ncol(ncol)
   , nrow(nrow)
   , nvar(ncol)
   , svar(nrow)
 {
-  for (int ii = 0; ii < ncol; ii++) {
+  for (std::size_t ii = 0; ii < ncol; ii++) {
     vectors.push_back(
       mist::Variable::data_ptr(new mist::Variable::data_t[nrow]));
-    for (int jj = 0; jj < nrow; jj++) {
+    for (std::size_t jj = 0; jj < nrow; jj++) {
       vectors[ii].get()[jj] = 0;
     }
     if (!b) {
@@ -37,18 +37,18 @@ DataMatrix::DataMatrix(int ncol, int nrow, int b)
 }
 
 // each column a variable
-DataMatrix::DataMatrix(int data[], int ncol, int nrow)
+DataMatrix::DataMatrix(data_t data[], std::size_t ncol, std::size_t nrow)
   : ncol(ncol)
   , nrow(nrow)
   , nvar(ncol)
   , svar(nrow)
 {
-  for (int ii = 0; ii < ncol; ii++) {
+  for (std::size_t ii = 0; ii < ncol; ii++) {
     vectors.push_back(
       mist::Variable::data_ptr(new mist::Variable::data_t[nrow]));
-    int bin = 0;
-    for (int jj = 0; jj < nrow; jj++) {
-      bin = std::max(bin, data[nrow * ii + jj] + 1);
+    data_t bin = 0;
+    for (std::size_t jj = 0; jj < nrow; jj++) {
+      bin = std::max(bin, data_t(data[nrow * ii + jj] + 1));
       vectors[ii].get()[jj] = data[nrow * ii + jj];
     }
     if (!bin) {
@@ -88,9 +88,9 @@ DataMatrix::DataMatrix(np::ndarray const& np)
     auto var_ptr = data + ii * svar;
     // we don't own the memory, so use an empty shared pointer
     vectors.push_back(Variable::data_ptr(Variable::data_ptr(), var_ptr));
-    int bin = 0;
+    data_t bin = 0;
     for (int jj = 0; jj < svar; jj++) {
-      bin = std::max(bin, var_ptr[jj] + 1);
+      bin = std::max(bin, (data_t)(var_ptr[jj] + 1));
     }
     if (!bin) {
       // sanity check, probably never get here
@@ -213,10 +213,10 @@ DataMatrix::DataMatrix(std::string const& filename, bool rowmajor)
   }
 
   // determine number of bins for each variable
-  for (auto& v : vectors) {
-    int bin = 0;
-    for (int ii = 0; ii < svar; ii++) {
-      bin = std::max(bin, v.get()[ii] + 1);
+  for (auto const& v : vectors) {
+    data_t bin = 0;
+    for (index_t ii = 0; ii < svar; ii++) {
+      bin = std::max(bin, (data_t)(v.get()[ii] + 1));
     }
     bins.push_back(bin);
   }
@@ -229,7 +229,7 @@ DataMatrix::DataMatrix(std::string const& filename)
 }
 
 Variable
-DataMatrix::get_variable(int i)
+DataMatrix::get_variable(index_t i)
 {
   return mist::Variable(vectors[i], svar, i, bins[i]);
 };
@@ -238,7 +238,7 @@ Variable::tuple
 DataMatrix::variables()
 {
   Variable::tuple ret(nvar);
-  for (int ii = 0; ii < nvar; ii++) {
+  for (index_t ii = 0; ii < nvar; ii++) {
     ret[ii] = this->get_variable(ii);
   }
   return ret;

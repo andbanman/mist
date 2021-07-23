@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cctype>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -37,9 +39,12 @@ namespace io {
 class DataMatrix
 {
 public:
+  using data_t = Variable::data_t;
+  using index_t = Variable::index_t;
+
   // allocate empty matrix
-  DataMatrix(int ncol, int nrow, int b);
-  DataMatrix(int data[], int ncol, int nrow);
+  DataMatrix(std::size_t ncol, std::size_t nrow, data_t b);
+  DataMatrix(data_t data[], std::size_t ncol, std::size_t nrow);
 #ifdef BOOST_PYTHON_EXTENSIONS
   DataMatrix(np::ndarray const& np);
 #endif
@@ -47,12 +52,11 @@ public:
   DataMatrix(std::string const& filename);
   DataMatrix(std::string const& filename, bool rowmajor);
 
-  Variable get_variable(int i);
+  Variable get_variable(index_t i);
   Variable::tuple variables();
-  unsigned long get_nvar() const;
-  unsigned long get_svar() const;
-  unsigned long get_ncol() const;
-  unsigned long get_nrow() const;
+  std::size_t get_nvar() const; std::size_t get_svar() const;
+  std::size_t get_ncol() const;
+  std::size_t get_nrow() const;
 
   void write_file(std::string const& filename, char sep);
   void write_file(std::string const& filename);
@@ -60,8 +64,9 @@ public:
   void python_write_file(std::string const& filename);
 #endif
 
-  std::vector<mist::Variable::data_ptr> vectors;
-  std::vector<int> bins;
+  std::vector<Variable::data_ptr> vectors;
+  std::vector<data_t> bins;
+
 private:
   std::size_t ncol;
   std::size_t nrow;

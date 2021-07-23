@@ -9,7 +9,7 @@
 
 using namespace mist;
 
-int test_data[21] = { 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1,
+io::DataMatrix::data_t test_data[21] = { 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1,
                       0, 0, 1, 1, 0, 1, 0, 1, 0, 1 };
 int n = 3;
 int m = 7;
