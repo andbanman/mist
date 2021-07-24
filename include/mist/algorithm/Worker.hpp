@@ -17,13 +17,14 @@ namespace algorithm {
  * of the search space depending on the rank parameters. It is common for each
  * computing thread on the system to have a unique Worker instance.
  */
-class Worker
+class Worker : public TupleSpaceTraverser
 {
 public:
   using entropy_calc_ptr = std::shared_ptr<it::EntropyCalculator>;
   using output_stream_ptr = std::shared_ptr<io::OutputStream>;
   using measure_ptr = std::shared_ptr<it::Measure>;
   using tuple_t = Variable::indexes;
+  using count_t = TupleSpace::count_t;
 
   // Typedefs for convenience expressing the algorithm
 
@@ -53,6 +54,9 @@ public:
 
   bool output_all = false;
 
+  void process_tuple(count_t tuple_no, tuple_t const& tuple);
+  void process_tuple_entropy(count_t tuple_no, tuple_t const& tuple, it::Entropy const& e);
+
 private:
   TupleSpace ts;
   entropy_calc_ptr calc;
@@ -62,8 +66,6 @@ private:
   int ranks;  // total number of ranks
   long limit; // maximum number of tuples to process
 
-  void processTuple(tuple_t const& tuple);
-  void processTuple(tuple_t const& tuple, it::Entropy const& e);
   void search_d1(long start, long stop, bool full);
   void search_d2(long start, long stop, bool full);
   void search_d3(long start, long stop, bool full);

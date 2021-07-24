@@ -67,10 +67,10 @@ add_object(Version Version.cpp ${include_path}/Version.hpp)
 add_object(Search Search.cpp ${include_path}/Search.hpp ${include_path}/mist.hpp ${include_path}/Version.hpp)
 
 # Namespaces
-add_subdirectory(algorithm)
 add_subdirectory(cache)
 add_subdirectory(io)
 add_subdirectory(it)
+add_subdirectory(algorithm)
 
 # TODO use generator expressions instead
 if (${BuildStatic})
