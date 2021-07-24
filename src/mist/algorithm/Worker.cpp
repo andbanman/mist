@@ -14,9 +14,9 @@ Worker::process_tuple(count_t tuple_no, tuple_t const& tuple)
   auto result = this->measure->compute(*this->calc, tuple);
   for (auto& out : out_streams) {
     if (this->output_all) {
-      out->push(tuple, result);
+      out->push(tuple_no, tuple, result);
     } else {
-      out->push(tuple,
+      out->push(tuple_no, tuple,
                 it::Measure::result_type(result.end() - 1, result.end()));
     }
   }
@@ -28,9 +28,9 @@ Worker::process_tuple_entropy(count_t tuple_no, tuple_t const& tuple, it::Entrop
   auto result = this->measure->compute(*this->calc, tuple, e);
   for (auto& out : out_streams) {
     if (this->output_all) {
-      out->push(tuple, result);
+      out->push(tuple_no, tuple, result);
     } else {
-      out->push(tuple,
+      out->push(tuple_no, tuple,
                 it::Measure::result_type(result.end() - 1, result.end()));
     }
   }

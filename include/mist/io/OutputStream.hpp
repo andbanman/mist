@@ -24,7 +24,7 @@ protected:
 
 public:
   virtual ~OutputStream(){};
-  virtual void push(tuple_type const& tuple, result_type const& result) = 0;
+  virtual void push(std::size_t tuple_no, tuple_type const& tuple, result_type const& result) = 0;
   // virtual void push(tuple_type const& tuple, measure_type) = 0;
 };
 

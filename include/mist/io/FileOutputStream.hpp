@@ -50,7 +50,7 @@ public:
   FileOutputStream(FileOutputStream const& other, std::string const& header);
   ~FileOutputStream();
 
-  void push(tuple_type const& tuple, result_type const& result);
+  void push(std::size_t tuple_no, tuple_type const& tuple, result_type const& result);
   std::string get_filename();
 };
 

@@ -14,7 +14,7 @@ public:
   MapOutputStream();
   ~MapOutputStream();
 
-  void push(tuple_type const& tuple, result_type const& result);
+  void push(std::size_t tuple_no, tuple_type const& tuple, result_type const& result);
   void combine(MapOutputStream const& other);
   map_type const& get_results();
 

@@ -168,7 +168,7 @@ FileOutputStream::~FileOutputStream()
 }
 
 void
-FileOutputStream::push(tuple_type const& tuple, result_type const& result)
+FileOutputStream::push(std::size_t tuple_no, tuple_type const& tuple, result_type const& result)
 {
   std::string ss = "";
   for (auto t : tuple) {

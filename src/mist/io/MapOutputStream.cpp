@@ -8,7 +8,7 @@ MapOutputStream::MapOutputStream()
 MapOutputStream::~MapOutputStream(){};
 
 void
-MapOutputStream::push(tuple_type const& tuple, result_type const& result)
+MapOutputStream::push(std::size_t tuple_no, tuple_type const& tuple, result_type const& result)
 {
   results[tuple] = result;
 }
