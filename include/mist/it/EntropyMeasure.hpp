@@ -21,6 +21,7 @@ public:
                       Variable::indexes const& tuple,
                       Entropy const& e) const;
   std::string header(int d, bool full_output) const;
+  std::vector<std::string> const& names(int d, bool full_output) const;
 
   enum struct sub_calc_1d : int
   {

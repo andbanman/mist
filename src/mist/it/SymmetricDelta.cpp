@@ -175,45 +175,45 @@ SymmetricDelta::compute(EntropyCalculator& ecalc,
   return ret;
 }
 
+const std::vector<std::string> names_d2 = {"v0","v1","SymmetricDelta"};
+const std::vector<std::string> names_d3 = {"v0","v1","v2","SymmetricDelta"};
+const std::vector<std::string> names_d2_full = {"v0","v1","entropy0","entropy1","entropy01","SymmetricDelta"};
+const std::vector<std::string> names_d3_full = {"v0","v1","v2",
+          "entropy0" ,"entropy1"
+          ,"entropy2" ,"entropy01"
+          ,"entropy02" ,"entropy12"
+          ,"entropy012" ,"jointInfo01"
+          ,"jointInfo02" ,"jointInfo12"
+          ,"jointInfo012" ,"diffInfo0"
+          ,"diffInfo1" ,"diffInfo2"
+          ,"SymmetricDelta"};
+
+std::vector<std::string> const&
+SymmetricDelta::names(int d, bool full_output) const
+{
+  switch (d) {
+    case 2:
+      return (full_output) ? names_d2_full : names_d2;
+      break;
+    case 3:
+      return (full_output) ? names_d3_full : names_d3;
+      break;
+    default:
+      throw SymmetricDeltaException("names",
+                                    "Unsupported tuple size " +
+                                      std::to_string(d) +
+                                      ", valid range [2,3]");
+  }
+}
+
 std::string
 SymmetricDelta::header(int d, bool full_output) const
 {
-  std::string h;
-
-  if (!full_output) {
-    switch (d) {
-      case 2:
-        return "v0,v1,SymmetricDelta";
-      case 3:
-        return "v0,v1,v2,SymmetricDelta";
-    }
+  auto n = names(d,full_output);
+  std::string h = n.front();
+  auto N = n.size();
+  for (int ii = 1; ii < N; ii++) {
+    h += "," + n[ii];
   }
-
-  switch (d) {
-    case 2:
-      h = "v0,v1,"
-          "entropy0,entropy1,entropy01"
-          ",SymmetricDelta";
-      break;
-    case 3:
-      h = "v0,v1,v2,"
-          "entropy0"
-          ",entropy1"
-          ",entropy2"
-          ",entropy01"
-          ",entropy02"
-          ",entropy12"
-          ",entropy012"
-          ",jointInfo01"
-          ",jointInfo02"
-          ",jointInfo12"
-          ",jointInfo012"
-          ",diffInfo0"
-          ",diffInfo1"
-          ",diffInfo2"
-          ",SymmetricDelta";
-      break;
-  }
-
   return h;
 }

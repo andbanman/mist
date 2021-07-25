@@ -43,6 +43,14 @@ public:
    */
   virtual std::string header(int d, bool full_output) const = 0;
 
+  /**
+   * Return array of names for each column in the output
+   * @param d tuple size
+   * @param full_output whether header should include all subcalculation names
+   * @return array of column names in the output
+   */
+  virtual std::vector<std::string> const& names(int d, bool full_output) const = 0;
+
   /** Whether this measure uses intermediate entropy calculations
    */
   virtual bool full_entropy() const = 0;
