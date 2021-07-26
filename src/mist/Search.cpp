@@ -271,7 +271,7 @@ Search::get_tuple_limit()
 void
 Search::set_ranks(int ranks)
 {
-  pimpl->ranks = ranks;
+  pimpl->ranks = (!ranks) ? std::thread::hardware_concurrency() : ranks;
 }
 int
 Search::get_ranks()
