@@ -230,7 +230,8 @@ public:
     std::size_t norm = 0;
     for (auto val : this->data)
       norm += val;
-    this->scale(1.0 / norm);
+    if (norm)
+      this->scale(1.0 / norm);
   };
 
   //
