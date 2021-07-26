@@ -128,7 +128,7 @@ DataMatrix::DataMatrix(std::string const& filename, bool rowmajor)
     // scan past header lines
     if (skip) {
       for (char c : line) {
-        if (!issep(c) && !std::isdigit(c)) {
+        if (!issep(c) && !std::isdigit(c) && c!='-') {
           skip = true;
           break;
         }
@@ -175,9 +175,14 @@ DataMatrix::DataMatrix(std::string const& filename, bool rowmajor)
     int* vec = (rowmajor) ? &row : &col; //this vector
     int* elm = (rowmajor) ? &col : &row; //this element of vector
     char int_string[100];
+    bool is_negative = false;
     for (auto c : line) {
+      if (c == '-') {
+        is_negative = true;
+      }
       if (!std::isdigit(c) && pos) {
-        vectors[*vec].get()[*elm] = std::atoi(int_string);
+        auto val  = std::atoi(int_string);
+        vectors[*vec].get()[*elm] = (is_negative) ? -1 * val : val;
         int_string[0] = '\0';
         pos = 0;
         col++;
@@ -187,6 +192,7 @@ DataMatrix::DataMatrix(std::string const& filename, bool rowmajor)
             "Error loading file " + filename + ":" + std::to_string(row) +
               " - number of columns greater than expected.");
         }
+        is_negative = false;
       } else if (std::isdigit(c)) {
         int_string[pos] = c;
         int_string[pos + 1] = 0;
