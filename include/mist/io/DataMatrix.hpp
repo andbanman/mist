@@ -53,7 +53,7 @@ public:
   DataMatrix(std::string const& filename, bool rowmajor);
 
   Variable get_variable(index_t i);
-  Variable::tuple variables();
+  Variable::tuple* variables();
   std::size_t get_nvar() const; std::size_t get_svar() const;
   std::size_t get_ncol() const;
   std::size_t get_nrow() const;

@@ -14,7 +14,8 @@ BOOST_AUTO_TEST_CASE(EntropyCalculator_constructor_default)
   int n = 3;
   int m = 4;
   io::DataMatrix test_matrix(test_data, n, m);
-  it::EntropyCalculator ec(test_matrix.variables());
+  it::EntropyCalculator ec(
+      it::EntropyCalculator::variables_ptr(test_matrix.variables()));
 }
 
 BOOST_AUTO_TEST_CASE(EntropyCalculator_entropy_bounds)
@@ -23,7 +24,8 @@ BOOST_AUTO_TEST_CASE(EntropyCalculator_entropy_bounds)
   int m = 4;
   io::DataMatrix test_matrix(test_data, n, m);
 
-  it::EntropyCalculator ec(test_matrix.variables());
+  it::EntropyCalculator ec(
+      it::EntropyCalculator::variables_ptr(test_matrix.variables()));
 
   // run through some entropies
   for (Variable::index_t i = 0; i < n; i++) {
@@ -48,7 +50,8 @@ BOOST_AUTO_TEST_CASE(EntropyCalculator_entropy_correct1)
   int m = 4;
   io::DataMatrix test_matrix(test_data, n, m);
 
-  it::EntropyCalculator ec(test_matrix.variables());
+  it::EntropyCalculator ec(
+      it::EntropyCalculator::variables_ptr(test_matrix.variables()));
 
   BOOST_TEST(ec.entropy({ 0 }) == 0.8112781244591328);
   BOOST_TEST(ec.entropy({ 1 }) == 1);

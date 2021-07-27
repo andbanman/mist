@@ -7,44 +7,44 @@
 using namespace mist;
 using namespace mist::it;
 
-EntropyCalculator::EntropyCalculator(Variable::tuple const& vars,
-                                     cache_ptr_type cache)
+EntropyCalculator::EntropyCalculator(variables_ptr const& vars,
+                                     cache_ptr_type const& cache)
   : vars(vars)
   , counter(0)
   , cache(cache)
 {}
 
-EntropyCalculator::EntropyCalculator(Variable::tuple const& vars,
-                                     counter_ptr_type counter,
-                                     cache_ptr_type cache)
+EntropyCalculator::EntropyCalculator(variables_ptr const& vars,
+                                     counter_ptr_type const& counter,
+                                     cache_ptr_type const& cache)
   : vars(vars)
   , counter(counter)
   , cache(cache)
 {}
 
-EntropyCalculator::EntropyCalculator(Variable::tuple const& vars,
-                                     counter_ptr_type counter,
-                                     std::vector<cache_ptr_type>& caches)
+EntropyCalculator::EntropyCalculator(variables_ptr const& vars,
+                                     counter_ptr_type const& counter,
+                                     std::vector<cache_ptr_type> const& caches)
   : vars(vars)
   , counter(counter)
 {
   init_caches(caches);
 }
 
-EntropyCalculator::EntropyCalculator(Variable::tuple const& vars,
-                                     counter_ptr_type counter)
+EntropyCalculator::EntropyCalculator(variables_ptr const& vars,
+                                     counter_ptr_type const& counter)
   : vars(vars)
   , counter(counter)
 {}
 
-EntropyCalculator::EntropyCalculator(Variable::tuple const& vars)
+EntropyCalculator::EntropyCalculator(variables_ptr const& vars)
   : vars(vars)
 {
   this->counter = counter_ptr_type(new VectorCounter());
 }
 
 void
-EntropyCalculator::init_caches(std::vector<cache_ptr_type>& caches)
+EntropyCalculator::init_caches(std::vector<cache_ptr_type> const& caches)
 {
   auto num_caches = caches.size();
   if (num_caches >= 1) {
@@ -75,7 +75,7 @@ EntropyCalculator::entropy_cache(tuple_t const& tuple, cache_ptr_type& cache)
     try {
       return *cache->get(tuple);
     } catch (std::out_of_range& e) {
-      counter->count(vars, tuple, dist);
+      counter->count(*vars, tuple, dist);
       dist.normalize();
       auto entropy = entropy_it_distribution(dist);
       try {
@@ -86,7 +86,7 @@ EntropyCalculator::entropy_cache(tuple_t const& tuple, cache_ptr_type& cache)
       return entropy;
     }
   } else {
-    this->counter->count(vars, tuple, dist);
+    this->counter->count(*vars, tuple, dist);
     dist.normalize();
     return entropy_it_distribution(dist);
   }

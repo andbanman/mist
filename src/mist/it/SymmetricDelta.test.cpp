@@ -14,7 +14,8 @@ io::DataMatrix::data_t test_data[21] = { 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1,
 int n = 3;
 int m = 7;
 io::DataMatrix test_matrix(test_data, n, m);
-it::EntropyCalculator ec(test_matrix.variables());
+it::EntropyCalculator ec(
+    it::EntropyCalculator::variables_ptr(test_matrix.variables()));
 
 // expected values
 double e0 = 0.863120568566631;

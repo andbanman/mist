@@ -234,12 +234,12 @@ DataMatrix::get_variable(index_t i)
   return mist::Variable(vectors[i], svar, i, bins[i]);
 };
 
-Variable::tuple
+Variable::tuple*
 DataMatrix::variables()
 {
-  Variable::tuple ret(nvar);
+  Variable::tuple* ret = new Variable::tuple(nvar);
   for (index_t ii = 0; ii < nvar; ii++) {
-    ret[ii] = this->get_variable(ii);
+    (*ret)[ii] = this->get_variable(ii);
   }
   return ret;
 }

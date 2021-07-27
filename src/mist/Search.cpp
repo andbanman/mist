@@ -29,6 +29,7 @@ using measure_ptr = std::shared_ptr<it::Measure>;
 using cache_ptr = it::EntropyCalculator::cache_ptr_type;
 using entropy_calc_ptr = std::shared_ptr<it::EntropyCalculator>;
 using tuple_space_ptr = std::shared_ptr<algorithm::TupleSpace>;
+using variables_ptr = std::shared_ptr<Variable::tuple>;
 
 std::string
 Search::version()
@@ -386,7 +387,7 @@ Search::printCacheStats()
 
 entropy_calc_ptr
 makeEntropyCalc(probability_algorithms const& type,
-                Variable::tuple const& variables,
+                variables_ptr const& variables,
                 std::vector<cache_ptr>& caches)
 {
   it::EntropyCalculator* calc = 0;
@@ -400,7 +401,7 @@ makeEntropyCalc(probability_algorithms const& type,
     case probability_algorithms::bitset:
       calc = new it::EntropyCalculator(
         variables,
-        std::shared_ptr<it::BitsetCounter>(new it::BitsetCounter(variables)),
+        std::shared_ptr<it::BitsetCounter>(new it::BitsetCounter(*variables)),
         caches);
       break;
   }
@@ -430,7 +431,7 @@ Search::init_caches()
   int nvar = pimpl->data->get_nvar();
   int ranks = pimpl->ranks;
   int ncache = (pimpl->tuple_size > 2) ? 2 : 1;
-  auto variables = pimpl->data->variables();
+  auto variables = variables_ptr(pimpl->data->variables());
 
   pimpl->shared_caches.resize(ncache);
 
@@ -523,7 +524,7 @@ Search::start()
 
   int nvar = pimpl->data->get_nvar();
   int tuple_size = pimpl->tuple_size;
-  auto variables = pimpl->data->variables();
+  auto variables = variables_ptr(pimpl->data->variables());
   auto total_ranks =
     (pimpl->parallel_search) ? pimpl->total_ranks : pimpl->ranks;
   auto start_rank = pimpl->start_rank;
