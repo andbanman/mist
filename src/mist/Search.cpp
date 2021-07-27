@@ -28,6 +28,7 @@ using flat_stream_ptr = std::shared_ptr<io::FlatOutputStream>;
 using measure_ptr = std::shared_ptr<it::Measure>;
 using cache_ptr = it::EntropyCalculator::cache_ptr_type;
 using entropy_calc_ptr = std::shared_ptr<it::EntropyCalculator>;
+using tuple_space_ptr = std::shared_ptr<algorithm::TupleSpace>;
 
 std::string
 Search::version()
@@ -77,7 +78,7 @@ struct Search::impl
   probability_algorithms probability_algorithm;
   std::string probability_algorithm_str;
   std::string outfile;
-  algorithm::TupleSpace tuple_space;
+  tuple_space_ptr tuple_space;
 };
 
 Search::Search()
@@ -231,13 +232,13 @@ Search::get_tuple_size()
 void
 Search::set_tuple_space(algorithm::TupleSpace const& ts)
 {
-  pimpl->tuple_space = ts;
+  pimpl->tuple_space = tuple_space_ptr(new algorithm::TupleSpace(ts));
   pimpl->tuple_size = ts.tupleSize();
 }
 algorithm::TupleSpace
 Search::get_tuple_space()
 {
-  return pimpl->tuple_space;
+  return *pimpl->tuple_space.get();
 }
 
 void
@@ -456,8 +457,8 @@ Search::init_caches()
     std::vector<algorithm::Worker> workers(ranks);
     std::vector<std::thread> threads(ranks - 1);
     std::vector<cache_ptr> caches = { pimpl->shared_caches[cc] };
-    auto ts = algorithm::TupleSpace(nvar, d); //TODO: make it closer to the real TupleSpace ...
-    auto tuple_count = ts.count_tuples();
+    auto ts = tuple_space_ptr(new algorithm::TupleSpace(nvar, d)); //TODO: make it closer to the real TupleSpace ...
+    auto tuple_count = ts->count_tuples();
     auto rank_bounds = divide_tuple_space(ranks, tuple_count);
     for (int ii = 0; ii < ranks; ii++) {
       auto calc =
@@ -529,12 +530,12 @@ Search::start()
   auto ranks = pimpl->ranks;
 
   // load default tuplespace if one has not been set yet
-  if (!pimpl->tuple_space.tupleSize()) {
-    pimpl->tuple_space = algorithm::TupleSpace(nvar, tuple_size);
+  if (!pimpl->tuple_space) {
+    pimpl->tuple_space = tuple_space_ptr(new algorithm::TupleSpace(nvar, tuple_size));
   }
 
   // Divide the tuple space into chunks for each rank
-  auto max_tuples = pimpl->tuple_space.count_tuples();
+  auto max_tuples = pimpl->tuple_space->count_tuples();
   auto tuple_count = (pimpl->tuple_limit) ? pimpl->tuple_limit : max_tuples;
   auto rank_bounds = divide_tuple_space(total_ranks, tuple_count);
 

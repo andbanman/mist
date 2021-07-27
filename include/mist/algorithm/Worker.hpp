@@ -22,6 +22,7 @@ namespace algorithm {
 class Worker : public TupleSpaceTraverser
 {
 public:
+  using tuple_space_ptr = std::shared_ptr<algorithm::TupleSpace>;
   using entropy_calc_ptr = std::shared_ptr<it::EntropyCalculator>;
   using output_stream_ptr = std::shared_ptr<io::OutputStream>;
   using measure_ptr = std::shared_ptr<it::Measure>;
@@ -42,24 +43,24 @@ public:
    * @param out_streams Collection OutputStream pointers to send results
    * @param measure The it::Measure to calculate the results
    */
-  Worker(TupleSpace const& ts,
+  Worker(tuple_space_ptr const& ts,
          count_t start,
          count_t stop,
          result_t cutoff,
-         entropy_calc_ptr calc,
-         std::vector<output_stream_ptr> out_streams,
-         measure_ptr measure);
+         entropy_calc_ptr const& calc,
+         std::vector<output_stream_ptr> const& out_streams,
+         measure_ptr const& measure);
 
   /** Construct and configure a Worker instance.
    *
    * Cutoff is not used in the this instance.
    */
-  Worker(TupleSpace const& ts,
+  Worker(tuple_space_ptr const& ts,
          count_t start,
          count_t stop,
-         entropy_calc_ptr calc,
-         std::vector<output_stream_ptr> out_streams,
-         measure_ptr measure);
+         entropy_calc_ptr const& calc,
+         std::vector<output_stream_ptr>  const& out_streams,
+         measure_ptr const& measure);
 
   /** Start the Worker search space execution. Returns when all tuples in the
    * search space have been processed.
@@ -72,7 +73,7 @@ public:
   void process_tuple_entropy(count_t tuple_no, tuple_t const& tuple, it::Entropy const& e);
 
 private:
-  TupleSpace ts;
+  tuple_space_ptr ts;
   entropy_calc_ptr calc;
   std::vector<output_stream_ptr> out_streams;
   measure_ptr measure;

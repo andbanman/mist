@@ -46,22 +46,22 @@ Worker::start()
   bool full = measure->full_entropy();
 
   if (full) {
-    ts.traverse_entropy(start_no, stop_no, *calc.get(), *this);
+    ts->traverse_entropy(start_no, stop_no, *calc.get(), *this);
   }
   else {
-    ts.traverse(start_no, stop_no,  *this);
+    ts->traverse(start_no, stop_no, *this);
   }
 }
 
 Worker::~Worker() {}
 Worker::Worker() {}
 
-Worker::Worker(TupleSpace const& ts,
+Worker::Worker(tuple_space_ptr const& ts,
                count_t start,
                count_t stop,
-               entropy_calc_ptr calc,
-               std::vector<output_stream_ptr> out_streams,
-               measure_ptr measure)
+               entropy_calc_ptr const& calc,
+               std::vector<output_stream_ptr> const& out_streams,
+               measure_ptr const& measure)
   : Worker(
       ts,
       start,
@@ -73,13 +73,13 @@ Worker::Worker(TupleSpace const& ts,
 {
 }
 
-Worker::Worker(TupleSpace const& ts,
+Worker::Worker(tuple_space_ptr const& ts,
                count_t start,
                count_t stop,
                result_t cutoff,
-               entropy_calc_ptr calc,
-               std::vector<output_stream_ptr> out_streams,
-               measure_ptr measure)
+               entropy_calc_ptr const& calc,
+               std::vector<output_stream_ptr> const& out_streams,
+               measure_ptr const& measure)
   : ts(ts)
   , start_no(start)
   , stop_no(stop)
@@ -89,10 +89,10 @@ Worker::Worker(TupleSpace const& ts,
   , measure(measure)
 {
   // cannot set these in member initialization list?
-  if (ts.getVariableGroups().empty()) {
+  if (ts->getVariableGroups().empty()) {
     throw WorkerException("Worker", "TuplesSpace variable groups empty.");
   }
-  if (ts.getVariableGroupTuples().empty()) {
+  if (ts->getVariableGroupTuples().empty()) {
     throw WorkerException("Worker", "TuplesSpace variable group tuples empty.");
   }
   for (auto& out : out_streams) {
