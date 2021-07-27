@@ -1,6 +1,7 @@
 #include <new>
 
 #include "io/FlatOutputStream.hpp"
+#include "it/Entropy.hpp"
 
 using namespace mist;
 using namespace mist::io;
@@ -67,6 +68,36 @@ FlatOutputStream::push(std::size_t tuple_no, tuple_type const& tuple, result_typ
       (*data)[index] = d;
       index++;
     }
+  }
+}
+
+void
+FlatOutputStream::push(std::size_t tuple_no, tuple_type const& tuple, it::entropy_type result)
+{
+  // out of range, no new data can be saved
+  if (size && (tuple_no-offset) >= size) {
+    throw FlatOutputStreamException("push", "Tuple number out of range");
+  }
+  if (tuple.size() + 1 != rowsize) {
+    throw FlatOutputStreamException("push", "Unexpected tuple and result length");
+  }
+
+  // push into store
+  if (!size) {
+    try {
+      data->insert(data->end(), tuple.begin(), tuple.end());
+      data->push_back(result);
+    } catch (std::bad_alloc &e) {
+      throw FlatOutputStreamException("push", "Could not push result, out of memory");
+    }
+  }
+  else {
+    std::size_t index = (tuple_no-offset)*rowsize;
+    for (auto d : tuple) {
+      (*data)[index] = d;
+      index++;
+    }
+    (*data)[index] = result;
   }
 }
 

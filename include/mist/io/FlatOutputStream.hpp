@@ -3,6 +3,7 @@
 #include <map>
 
 #include "OutputStream.hpp"
+#include "it/Entropy.hpp"
 #include "py.hpp"
 
 namespace mist {
@@ -20,6 +21,7 @@ public:
   ~FlatOutputStream();
 
   void push(std::size_t tuple_no, tuple_type const& tuple, result_type const& result);
+  void push(std::size_t tuple_no, tuple_type const& tuple, it::entropy_type result);
   //void combine(FlatOutputStream const& other);
   std::vector<data_t> const& get_results();
   //tuples_t const& get_tuples();

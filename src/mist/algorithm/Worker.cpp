@@ -19,8 +19,7 @@ Worker::process_tuple(count_t tuple_no, tuple_t const& tuple)
     if (this->output_all) {
       out->push(tuple_no, tuple, result);
     } else {
-      out->push(tuple_no, tuple,
-                it::Measure::result_type(result.end() - 1, result.end()));
+      out->push(tuple_no, tuple, result.back());
     }
   }
 }
@@ -36,8 +35,7 @@ Worker::process_tuple_entropy(count_t tuple_no, tuple_t const& tuple, it::Entrop
     if (this->output_all) {
       out->push(tuple_no, tuple, result);
     } else {
-      out->push(tuple_no, tuple,
-                it::Measure::result_type(result.end() - 1, result.end()));
+      out->push(tuple_no, tuple, result.back());
     }
   }
 }

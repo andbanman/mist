@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 #include "OutputStream.hpp"
+#include "it/Entropy.hpp"
 
 #define BUFFER_MAX_SIZE_DEFAULT 1024
 
@@ -51,6 +52,7 @@ public:
   ~FileOutputStream();
 
   void push(std::size_t tuple_no, tuple_type const& tuple, result_type const& result);
+  void push(std::size_t tuple_no, tuple_type const& tuple, it::entropy_type result);
   std::string get_filename();
 };
 

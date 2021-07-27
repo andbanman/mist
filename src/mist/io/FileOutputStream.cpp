@@ -3,6 +3,7 @@
 #include "iostream"
 
 #include "io/FileOutputStream.hpp"
+#include "it/Entropy.hpp"
 #include <exception>
 
 using namespace mist;
@@ -178,6 +179,17 @@ FileOutputStream::push(std::size_t tuple_no, tuple_type const& tuple, result_typ
     ss += double_to_string_fast(double_strbuf, *it) + ",";
   }
   ss += double_to_string_fast(double_strbuf, result.back()) + "\n";
+  this->buffered_write(ss);
+}
+
+void
+FileOutputStream::push(std::size_t tuple_no, tuple_type const& tuple, it::entropy_type result)
+{
+  std::string ss = "";
+  for (auto t : tuple) {
+    ss += std::to_string(t) + ",";
+  }
+  ss += double_to_string_fast(double_strbuf, result) + "\n";
   this->buffered_write(ss);
 }
 

@@ -6,6 +6,7 @@
 
 #include "../Variable.hpp"
 #include "../it/Measure.hpp"
+#include "it/Entropy.hpp"
 
 namespace mist {
 namespace io {
@@ -26,6 +27,7 @@ protected:
 public:
   virtual ~OutputStream(){};
   virtual void push(std::size_t tuple_no, tuple_type const& tuple, result_type const& result) = 0;
+  virtual void push(std::size_t tuple_no, tuple_type const& tuple, it::entropy_type result) = 0;
   // virtual void push(tuple_type const& tuple, measure_type) = 0;
 };
 
