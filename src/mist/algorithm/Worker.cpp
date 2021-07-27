@@ -3,6 +3,7 @@
 
 #include "algorithm/Worker.hpp"
 #include "it/Entropy.hpp"
+#include "it/EntropyCalculator.hpp"
 #include "it/SymmetricDelta.hpp"
 
 using namespace mist;
@@ -59,32 +60,54 @@ Worker::Worker() {}
 Worker::Worker(tuple_space_ptr const& ts,
                count_t start,
                count_t stop,
-               entropy_calc_ptr const& calc,
+               entropy_calc_ptr & calc,
                std::vector<output_stream_ptr> const& out_streams,
                measure_ptr const& measure)
-  : Worker(
-      ts,
-      start,
-      stop,
-      -std::numeric_limits<double>::infinity(),
-      calc,
-      out_streams,
-      measure)
+  : Worker(ts,
+           start,
+           stop,
+           -std::numeric_limits<double>::infinity(),
+           calc,
+           out_streams,
+           measure)
 {
+}
+
+Worker::Worker(Worker const& other)
+  : ts(other.ts)
+  , start_no(other.start_no)
+  , stop_no(other.stop_no)
+  , cutoff(other.cutoff)
+  , calc(new it::EntropyCalculator(*other.calc))
+  , out_streams(other.out_streams)
+  , measure(other.measure)
+{}
+
+Worker&
+Worker::operator=(Worker const& other)
+{
+  ts = other.ts;
+  start_no = other.start_no;
+  stop_no = other.stop_no;
+  cutoff = other.cutoff;
+  calc = entropy_calc_ptr(new it::EntropyCalculator(*other.calc));
+  out_streams = other.out_streams;
+  measure = other.measure;
+  return *this;
 }
 
 Worker::Worker(tuple_space_ptr const& ts,
                count_t start,
                count_t stop,
                result_t cutoff,
-               entropy_calc_ptr const& calc,
+               entropy_calc_ptr & calc,
                std::vector<output_stream_ptr> const& out_streams,
                measure_ptr const& measure)
   : ts(ts)
   , start_no(start)
   , stop_no(stop)
   , cutoff(cutoff)
-  , calc(calc)
+  , calc(std::move(calc))
   , out_streams(out_streams)
   , measure(measure)
 {

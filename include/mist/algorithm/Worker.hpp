@@ -23,7 +23,7 @@ class Worker : public TupleSpaceTraverser
 {
 public:
   using tuple_space_ptr = std::shared_ptr<algorithm::TupleSpace>;
-  using entropy_calc_ptr = std::shared_ptr<it::EntropyCalculator>;
+  using entropy_calc_ptr = std::unique_ptr<it::EntropyCalculator>;
   using output_stream_ptr = std::shared_ptr<io::OutputStream>;
   using measure_ptr = std::shared_ptr<it::Measure>;
   using tuple_t = Variable::indexes;
@@ -47,7 +47,7 @@ public:
          count_t start,
          count_t stop,
          result_t cutoff,
-         entropy_calc_ptr const& calc,
+         entropy_calc_ptr & calc,
          std::vector<output_stream_ptr> const& out_streams,
          measure_ptr const& measure);
 
@@ -58,9 +58,13 @@ public:
   Worker(tuple_space_ptr const& ts,
          count_t start,
          count_t stop,
-         entropy_calc_ptr const& calc,
+         entropy_calc_ptr & calc,
          std::vector<output_stream_ptr>  const& out_streams,
          measure_ptr const& measure);
+
+  // Explicit copy constructors
+  Worker(Worker const& other);
+  Worker& operator=(Worker const& other);
 
   /** Start the Worker search space execution. Returns when all tuples in the
    * search space have been processed.

@@ -27,7 +27,7 @@ using map_stream_ptr = std::shared_ptr<io::MapOutputStream>;
 using flat_stream_ptr = std::shared_ptr<io::FlatOutputStream>;
 using measure_ptr = std::shared_ptr<it::Measure>;
 using cache_ptr = it::EntropyCalculator::cache_ptr_type;
-using entropy_calc_ptr = std::shared_ptr<it::EntropyCalculator>;
+using entropy_calc_ptr = std::unique_ptr<it::EntropyCalculator>;
 using tuple_space_ptr = std::shared_ptr<algorithm::TupleSpace>;
 using variables_ptr = std::shared_ptr<Variable::tuple>;
 
@@ -48,7 +48,6 @@ struct thread_config
   measure_ptr measure;
   output_stream_ptr output_stream;
   std::vector<cache_ptr> caches;
-  entropy_calc_ptr calculator;
 };
 
 struct Search::impl
