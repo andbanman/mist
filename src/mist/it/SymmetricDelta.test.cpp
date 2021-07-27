@@ -101,6 +101,7 @@ BOOST_AUTO_TEST_CASE(SymmetricDelta_compute_completion,
   ee[(int)it::d2::e0] = e0;
   ee[(int)it::d2::e1] = e1;
   ee[(int)it::d2::e01] = e01;
-  auto res = sym.compute(ec, { 0, 1 }, ee);
+  it::SymmetricDelta::result_type res;
+  sym.compute(ec, Variable::indexes({ 0, 1 }), ee, res);
   BOOST_TEST(res.back() == I01);
 }

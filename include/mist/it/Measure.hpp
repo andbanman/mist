@@ -25,6 +25,9 @@ public:
    */
   virtual result_type compute(EntropyCalculator& ecalc,
                               Variable::indexes const& tuple) const = 0;
+  virtual void compute(EntropyCalculator& ecalc,
+                              Variable::indexes const& tuple,
+                              result_type& result) const = 0;
 
   /**
    * Compute the information theory measure with the the given variables,
@@ -34,6 +37,10 @@ public:
   virtual result_type compute(EntropyCalculator& ecalc,
                               Variable::indexes const& tuple,
                               Entropy const& entropy) const = 0;
+  virtual void compute(EntropyCalculator& ecalc,
+                              Variable::indexes const& tuple,
+                              Entropy const& entropy,
+                              result_type& result) const = 0;
 
   /**
    * Return a comma-separated header string corresponding to the full results

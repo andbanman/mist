@@ -11,7 +11,7 @@ using namespace mist::algorithm;
 void
 Worker::process_tuple(count_t tuple_no, tuple_t const& tuple)
 {
-  auto result = this->measure->compute(*this->calc, tuple);
+  this->measure->compute(*this->calc, tuple, this->result);
   if (result.back() < cutoff) {
     return;
   }
@@ -28,7 +28,7 @@ Worker::process_tuple(count_t tuple_no, tuple_t const& tuple)
 void
 Worker::process_tuple_entropy(count_t tuple_no, tuple_t const& tuple, it::Entropy const& e)
 {
-  auto result = this->measure->compute(*this->calc, tuple, e);
+  this->measure->compute(*this->calc, tuple, e, this->result);
   if (result.back() < cutoff) {
     return;
   }

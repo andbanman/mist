@@ -79,6 +79,8 @@ private:
   count_t start_no;
   count_t stop_no;
   result_t cutoff;
+  // keep a result buffered to aviod malloc/free thrashing
+  it::Measure::result_type result;
 };
 
 class WorkerException : public std::exception
