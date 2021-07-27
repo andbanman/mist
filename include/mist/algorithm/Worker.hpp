@@ -4,6 +4,7 @@
 
 #include "algorithm/TupleSpace.hpp"
 #include "io/OutputStream.hpp"
+#include "it/Distribution.hpp"
 #include "it/Entropy.hpp"
 #include "it/EntropyCalculator.hpp"
 #include "it/Measure.hpp"

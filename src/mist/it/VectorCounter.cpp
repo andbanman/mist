@@ -12,13 +12,13 @@ using namespace mist::it;
 // Functions operating on a tuple are on performance critical paths
 //
 static void
-count1d(int varlen,
+count1d(std::size_t varlen,
         Variable::tuple const& vars,
         Variable::indexes const& indexes,
         Distribution& dist)
 {
   auto b0 = vars[indexes[0]].bins();
-  for (int jj = 0; jj < varlen; jj++) {
+  for (std::size_t jj = 0; jj < varlen; jj++) {
     auto v0 = vars[indexes[0]][jj];
     if (!VARIABLE_MISSING_VAL(v0)) {
       ++dist(v0, b0);
@@ -27,14 +27,14 @@ count1d(int varlen,
 }
 
 static void
-count2d(int varlen,
+count2d(std::size_t varlen,
         Variable::tuple const& vars,
         Variable::indexes const& indexes,
         Distribution& dist)
 {
   auto b0 = vars[indexes[0]].bins();
   auto b1 = vars[indexes[1]].bins();
-  for (int jj = 0; jj < varlen; jj++) {
+  for (std::size_t jj = 0; jj < varlen; jj++) {
     auto v0 = vars[indexes[0]][jj];
     auto v1 = vars[indexes[1]][jj];
     if (!VARIABLE_MISSING_VAL(v0) && !VARIABLE_MISSING_VAL(v1)) {
@@ -44,7 +44,7 @@ count2d(int varlen,
 }
 
 static void
-count3d(int varlen,
+count3d(std::size_t varlen,
         Variable::tuple const& vars,
         Variable::indexes const& indexes,
         Distribution& dist)
@@ -52,7 +52,7 @@ count3d(int varlen,
   auto b0 = vars[indexes[0]].bins();
   auto b1 = vars[indexes[1]].bins();
   auto b2 = vars[indexes[2]].bins();
-  for (int jj = 0; jj < varlen; jj++) {
+  for (std::size_t jj = 0; jj < varlen; jj++) {
     auto v0 = vars[indexes[0]][jj];
     auto v1 = vars[indexes[1]][jj];
     auto v2 = vars[indexes[2]][jj];
@@ -66,15 +66,15 @@ count3d(int varlen,
 //
 // Subset variables
 //
-Distribution
+void
 VectorCounter::count(Variable::tuple const& vars,
-                     Variable::indexes const& indexes)
+                     Variable::indexes const& indexes,
+                     Distribution& dist)
 {
-  int nvars = indexes.size();
-  int vals[nvars];
-  int varlen = vars.front().size();
+   std::size_t nvars = indexes.size();
+   std::size_t varlen = vars.front().size();
 
-  Distribution dist(vars, indexes);
+  dist.initialize(vars, indexes);
 
   switch (nvars) {
     case 1:
@@ -92,22 +92,20 @@ VectorCounter::count(Variable::tuple const& vars,
                                      std::to_string(nvars) +
                                      ", valid range [1,3]");
   }
-
-  return dist;
 }
 
-Distribution
-VectorCounter::count(Variable::tuple const& vars)
+void
+VectorCounter::count(Variable::tuple const& vars, Distribution& dist)
 {
-  int nvars = vars.size();
-  int varlen = vars.front().size();
+  std::size_t nvars = vars.size();
+  std::size_t varlen = vars.front().size();
 
   Variable::indexes indexes(nvars);
-  for (int ii = 0; ii < nvars; ii++) {
+  for (std::size_t ii = 0; ii < nvars; ii++) {
     indexes[ii] = ii;
   }
 
-  Distribution dist(vars, indexes);
+  dist.initialize(vars, indexes);
 
   switch (nvars) {
     case 1:
@@ -125,18 +123,15 @@ VectorCounter::count(Variable::tuple const& vars)
                                      std::to_string(nvars) +
                                      ", valid range [1,3]");
   }
-
-  return dist;
 }
 
-Distribution
-VectorCounter::count(Variable const& var)
+void
+VectorCounter::count(Variable const& var, Distribution& dist)
 {
-  int varlen = var.size();
+  std::size_t varlen = var.size();
   Variable::tuple vars(1);
   vars[0] = var;
   Variable::indexes indexes{ 0 };
-  Distribution dist(vars, indexes);
+  dist.initialize(vars, indexes);
   count1d(varlen, vars, indexes, dist);
-  return dist;
 }

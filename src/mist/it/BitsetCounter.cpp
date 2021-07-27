@@ -140,13 +140,14 @@ void static count3d(BitsetTable const& bitsetTable,
   }
 }
 
-Distribution
+void
 BitsetCounter::count(Variable::tuple const& vars,
-                     Variable::indexes const& indexes)
+                     Variable::indexes const& indexes,
+                     Distribution& dist)
 {
   int nvars = indexes.size();
 
-  Distribution dist(vars, indexes);
+  dist.initialize(vars, indexes);
 
   switch (nvars) {
     // TODO: Weird, for some reason the unrolled are slower???
@@ -164,31 +165,27 @@ BitsetCounter::count(Variable::tuple const& vars,
       recursiveBitsetCount(this->bits, vars, indexes, dist, vals, 0);
       break;
   }
-
-  return dist;
 }
 
 //! @exception out_of_range Variable index out of range of table whose size set
 //! in constructor
-Distribution
-BitsetCounter::count(Variable::tuple const& vars)
+void
+BitsetCounter::count(Variable::tuple const& vars, Distribution& dist)
 {
   auto nvars = vars.size();
   Variable::indexes indexes(nvars);
   for (int ii = 0; ii < nvars; ii++) {
     indexes[ii] = ii;
   }
-  Distribution dist = this->count(vars, indexes);
-  return dist;
+  this->count(vars, indexes, dist);
 }
 
-Distribution
-BitsetCounter::count(Variable const& var)
+void
+BitsetCounter::count(Variable const& var, Distribution& dist)
 {
   Variable::tuple vars(1);
   vars[0] = var;
-  Distribution dist = this->count(vars, { 0 });
-  return dist;
+  this->count(vars, { 0 }, dist);
 }
 
 BitsetCounter::BitsetCounter(Variable::tuple const& all_vars)

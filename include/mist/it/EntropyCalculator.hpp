@@ -22,6 +22,8 @@ public:
 private:
   Variable::tuple vars;
   counter_ptr_type counter;
+  // keep a distribution "buffer" to avoid thrashing malloc/free
+  it::Distribution dist;
   // TODO simpler caches
   cache_ptr_type cache = 0;
   cache_ptr_type cache1d = 0;

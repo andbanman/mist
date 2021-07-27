@@ -71,12 +71,11 @@ EntropyCalculator::entropy_it_distribution(Distribution const& pd)
 entropy_type
 EntropyCalculator::entropy_cache(tuple_t const& tuple, cache_ptr_type& cache)
 {
-  Distribution dist;
   if (cache) {
     try {
       return *cache->get(tuple);
     } catch (std::out_of_range& e) {
-      auto dist = counter->count(vars, tuple);
+      counter->count(vars, tuple, dist);
       dist.normalize();
       auto entropy = entropy_it_distribution(dist);
       try {
@@ -87,7 +86,7 @@ EntropyCalculator::entropy_cache(tuple_t const& tuple, cache_ptr_type& cache)
       return entropy;
     }
   } else {
-    auto dist = this->counter->count(vars, tuple);
+    this->counter->count(vars, tuple, dist);
     dist.normalize();
     return entropy_it_distribution(dist);
   }

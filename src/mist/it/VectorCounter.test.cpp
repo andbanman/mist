@@ -1,6 +1,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "Variable.hpp"
+#include "it/Distribution.hpp"
 #include "it/VectorCounter.hpp"
 
 using namespace mist;
@@ -26,9 +27,12 @@ BOOST_AUTO_TEST_CASE(BitsetCounter_count_1)
   Variable::tuple vars;
   vars.push_back(variable_many_bin2_a);
 
-  it::Distribution pd0 = pdb.count(vars, { 0 });
-  it::Distribution pd1 = pdb.count(vars);
-  it::Distribution pd2 = pdb.count(variable_many_bin2_a);
+  it::Distribution pd0;
+  it::Distribution pd1;
+  it::Distribution pd2;
+  pdb.count(vars, { 0 }, pd0);
+  pdb.count(vars, pd1);
+  pdb.count(variable_many_bin2_a, pd2);
 
   BOOST_TEST(pd0(std::vector<Variable::data_t>{ 0 }) == 3);
   BOOST_TEST(pd0(std::vector<Variable::data_t>{ 1 }) == 3);
@@ -49,7 +53,8 @@ BOOST_AUTO_TEST_CASE(VectorCounter_count_bins_2)
   vars.push_back(variable_many_bin2_a);
   vars.push_back(variable_many_bin2_b);
 
-  it::Distribution pd = pdv.count(vars);
+  it::Distribution pd;
+  pdv.count(vars, pd);
 
   BOOST_TEST(pd(std::vector<Variable::data_t>{ 0, 0 }) == 1);
   BOOST_TEST(pd(std::vector<Variable::data_t>{ 0, 1 }) == 2);
@@ -57,7 +62,7 @@ BOOST_AUTO_TEST_CASE(VectorCounter_count_bins_2)
   BOOST_TEST(pd(std::vector<Variable::data_t>{ 1, 1 }) == 1);
 
   vars.push_back(variable_many_bin2_b);
-  pd = pdv.count(vars);
+  pdv.count(vars, pd);
 
   BOOST_TEST(pd(std::vector<Variable::data_t>{ 0, 0, 0 }) == 1);
   BOOST_TEST(pd(std::vector<Variable::data_t>{ 0, 0, 1 }) == 0);
@@ -68,7 +73,9 @@ BOOST_AUTO_TEST_CASE(VectorCounter_count_bins_2)
 static it::Distribution
 polymorphCount(it::Counter& pdc, Variable::tuple const& vars)
 {
-  return pdc.count(vars);
+  it::Distribution dist;
+  pdc.count(vars, dist);
+  return dist;
 }
 
 BOOST_AUTO_TEST_CASE(VectorCounter_polymorph)

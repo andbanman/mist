@@ -459,10 +459,9 @@ Search::init_caches()
     auto ts = algorithm::TupleSpace(nvar, d); //TODO: make it closer to the real TupleSpace ...
     auto tuple_count = ts.count_tuples();
     auto rank_bounds = divide_tuple_space(ranks, tuple_count);
-    auto calc =
-      makeEntropyCalc(pimpl->probability_algorithm, variables, caches);
-
     for (int ii = 0; ii < ranks; ii++) {
+      auto calc =
+        makeEntropyCalc(pimpl->probability_algorithm, variables, caches);
       workers[ii] = algorithm::Worker(
         ts, rank_bounds[ii][0], rank_bounds[ii][1], calc, {}, entropy_measure);
     }
@@ -566,10 +565,11 @@ Search::start()
 
   std::vector<algorithm::Worker> workers(ranks);
   std::vector<std::thread> threads(ranks - 1);
-  auto calc = makeEntropyCalc(
-    pimpl->probability_algorithm, variables, pimpl->shared_caches);
   // Create Workers
   for (int ii = 0; ii < ranks; ii++) {
+    // each worker gets own calc, with own buffer probability distribution
+    auto calc = makeEntropyCalc(
+      pimpl->probability_algorithm, variables, pimpl->shared_caches);
     // Configure output streams. Each worker gets separate output streams
     // to avoid collision (single stream coordinated by mutex is too slow).
     std::vector<output_stream_ptr> out_streams;

@@ -24,10 +24,9 @@ class BitsetCounter : public Counter
 public:
   BitsetCounter(Variable::tuple const& all_vars);
   ~BitsetCounter(){};
-  Distribution count(Variable const& var);
-  Distribution count(Variable::tuple const& vars);
-  Distribution count(Variable::tuple const& vars,
-                     Variable::indexes const& indexes);
+  void count(Variable const&, Distribution&);
+  void count(Variable::tuple const&, Distribution&);
+  void count(Variable::tuple const&, Variable::indexes const&, Distribution&);
 
 private:
   BitsetTable bits;
