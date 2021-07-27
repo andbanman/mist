@@ -69,7 +69,7 @@ EntropyCalculator::entropy_it_distribution(Distribution const& pd)
 };
 
 entropy_type
-EntropyCalculator::entropy_cache(tuple_type const& tuple, cache_ptr_type& cache)
+EntropyCalculator::entropy_cache(tuple_t const& tuple, cache_ptr_type& cache)
 {
   Distribution dist;
   if (cache) {
@@ -94,7 +94,7 @@ EntropyCalculator::entropy_cache(tuple_type const& tuple, cache_ptr_type& cache)
 }
 
 entropy_type
-EntropyCalculator::entropy(tuple_type const& tuple)
+EntropyCalculator::entropy(tuple_t const& tuple)
 {
   if (this->cache) {
     // unified cache

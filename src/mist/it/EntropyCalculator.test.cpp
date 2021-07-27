@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE(EntropyCalculator_entropy_bounds)
   it::EntropyCalculator ec(test_matrix.variables());
 
   // run through some entropies
-  for (int i = 0; i < n; i++) {
+  for (Variable::index_t i = 0; i < n; i++) {
     ec.entropy({ i });
   }
   ec.entropy({ 0, 1 });

@@ -61,7 +61,7 @@ void load_yml_config(std::string file, mist::Search &mist) {
         // parse out variables
         // TODO: interpret ranges
         auto variablesYml = variableGroupYml["variables"];
-        std::vector<int> vars;
+        std::vector<mist::Variable::index_t> vars;
         for (std::size_t jj = 0; jj < variablesYml.size(); jj++) {
             vars.push_back(variablesYml[jj].as<int>());
         }
@@ -150,6 +150,8 @@ int main(int argc, char *argv[]) {
 
     if (!param.configfile.empty()) {
         load_yml_config(param.configfile, mist);
+    } else {
+        mist.set_tuple_size(param.tuple_size);
     }
 
     if (help) {
@@ -174,7 +176,6 @@ int main(int argc, char *argv[]) {
     //
     mist.set_probability_algorithm(param.pd_algorithm);
     mist.set_ranks(param.num_threads);
-    mist.set_tuple_size(param.tuple_size);
     mist.set_outfile(param.outfile);
     mist.load_file(param.infile);
     mist.start();

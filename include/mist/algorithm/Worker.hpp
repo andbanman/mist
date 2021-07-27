@@ -6,6 +6,7 @@
 #include "io/OutputStream.hpp"
 #include "it/EntropyCalculator.hpp"
 #include "it/Measure.hpp"
+#include "Variable.hpp"
 
 namespace mist {
 namespace algorithm {
@@ -22,6 +23,7 @@ public:
   using entropy_calc_ptr = std::shared_ptr<it::EntropyCalculator>;
   using output_stream_ptr = std::shared_ptr<io::OutputStream>;
   using measure_ptr = std::shared_ptr<it::Measure>;
+  using tuple_t = Variable::indexes;
 
   // Typedefs for convenience expressing the algorithm
 
@@ -60,8 +62,8 @@ private:
   int ranks;  // total number of ranks
   long limit; // maximum number of tuples to process
 
-  void processTuple(std::vector<int> const& tuple);
-  void processTuple(std::vector<int> const& tuple, it::Entropy const& e);
+  void processTuple(tuple_t const& tuple);
+  void processTuple(tuple_t const& tuple, it::Entropy const& e);
   void search_d1(long start, long stop, bool full);
   void search_d2(long start, long stop, bool full);
   void search_d3(long start, long stop, bool full);

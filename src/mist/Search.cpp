@@ -59,7 +59,7 @@ struct Search::impl
 
   // config
   unsigned long cache_size_bytes = 0;
-  long tuple_limit = 0;
+  algorithm::TupleSpace::tuple_index_t tuple_limit = 0;
   bool use_cache = true;
   bool full_output = false;
   bool in_memory_output = true;

@@ -8,7 +8,7 @@ using namespace mist;
 using namespace mist::algorithm;
 
 void
-Worker::processTuple(std::vector<int> const& tuple)
+Worker::processTuple(tuple_t const& tuple)
 {
   auto result = this->measure->compute(*this->calc, tuple);
   for (auto& out : out_streams) {
@@ -22,7 +22,7 @@ Worker::processTuple(std::vector<int> const& tuple)
 }
 
 void
-Worker::processTuple(std::vector<int> const& tuple, it::Entropy const& e)
+Worker::processTuple(tuple_t const& tuple, it::Entropy const& e)
 {
   auto result = this->measure->compute(*this->calc, tuple, e);
   for (auto& out : out_streams) {
@@ -48,10 +48,10 @@ Worker::search_d1(long start, long stop, bool full)
   bool init = true;
   bool work = true;
   int count = start;
-  TupleSpace::tuple_type starts(ngroups);
+  tuple_t starts(ngroups);
   starts.assign(ngroups,0);
   it::Entropy entropy((int)it::d1::size);
-  std::vector<int> tuple(1);
+  tuple_t tuple(1);
 
   // fast-forward to starting group and tuple
   auto ffw = ts.find_tuple(start);
@@ -87,10 +87,10 @@ Worker::search_d2(long start, long stop, bool full)
   bool init = true;
   bool work = true;
   int count = start;
-  TupleSpace::tuple_type starts(ngroups);
+  tuple_t starts(ngroups);
   starts.assign(ngroups,0);
   it::Entropy entropy((int)it::d2::size);
-  std::vector<int> tuple(2);
+  tuple_t tuple(2);
 
   // fast-forward to starting group and tuple
   auto ffw = ts.find_tuple(start);
@@ -141,10 +141,10 @@ Worker::search_d3(long start, long stop, bool full)
   bool init = true;
   bool work = true;
   int count = start;
-  TupleSpace::tuple_type starts(ngroups);
+  tuple_t starts(ngroups);
   starts.assign(ngroups,0);
   it::Entropy entropy((int)it::d3::size);
-  std::vector<int> tuple(3);
+  tuple_t tuple(3);
 
   // fast-forward to starting group and tuple
   auto ffw = ts.find_tuple(start);
@@ -199,11 +199,11 @@ Worker::search_d3(long start, long stop, bool full)
 void
 Worker::start()
 {
-  int total = (limit) ? limit : ts.count_tuples();
-  int step = (total + this->ranks - 1) / this->ranks; // round up
-  int start = step * (this->rank);
-  int stop = start + step;
-  int d = ts.getVariableGroupTuples().front().size();
+  TupleSpace::tuple_index_t total = (limit) ? limit : ts.count_tuples();
+  TupleSpace::tuple_index_t step = (total + this->ranks - 1) / this->ranks; // round up
+  TupleSpace::tuple_index_t start = step * (this->rank);
+  TupleSpace::tuple_index_t stop = start + step;
+  TupleSpace::tuple_index_t d = ts.getVariableGroupTuples().front().size();
   bool full = measure->full_entropy();
 
   // hard stop the last rank

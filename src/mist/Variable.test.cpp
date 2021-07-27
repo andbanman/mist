@@ -8,10 +8,10 @@
 using namespace mist;
 
 // test data
-Variable::data_type* null;
-auto* data_size6_bin2_a{ new Variable::data_type[6]{ 0, 1, 1, 0, 0, 1 } };
+Variable::data_t* null;
+auto* data_size6_bin2_a{ new Variable::data_t[6]{ 0, 1, 1, 0, 0, 1 } };
 ;
-auto* data_size6_bin2_b{ new Variable::data_type[6]{ 1, 1, 0, 0, 1, 0 } };
+auto* data_size6_bin2_b{ new Variable::data_t[6]{ 1, 1, 0, 0, 1, 0 } };
 ;
 
 // make shared pointers in global scope so the data doesn't get free'd
@@ -40,9 +40,9 @@ BOOST_AUTO_TEST_CASE(Variable_constructor_many)
 BOOST_AUTO_TEST_CASE(Variable_desctructor)
 {
   {
-    auto* data{ new Variable::data_type[6]{ 0, 1, 1, 0, 0, 1 } };
+    auto* data{ new Variable::data_t[6]{ 0, 1, 1, 0, 0, 1 } };
     ;
-    auto* data2{ new Variable::data_type[6]{ 0, 1, 1, 0, 0, 1 } };
+    auto* data2{ new Variable::data_t[6]{ 0, 1, 1, 0, 0, 1 } };
     ;
     Variable::data_ptr ptr(data);
     Variable::data_ptr ptr2(data2);
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(Variable_move)
 
 BOOST_AUTO_TEST_CASE(Variable_iterator)
 {
-  auto* data{ new Variable::data_type[6]{ -2, -1, 0, 1, 2, 3 } };
+  auto* data{ new Variable::data_t[6]{ -2, -1, 0, 1, 2, 3 } };
   ;
   Variable::data_ptr ptr(data);
   Variable va(ptr, 5, 0, 4);

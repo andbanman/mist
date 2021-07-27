@@ -12,8 +12,8 @@ namespace it {
 class Measure
 {
 public:
-  using data_type = double;
-  using result_type = std::vector<data_type>;
+  using data_t = double;
+  using result_type = std::vector<data_t>;
 
   virtual ~Measure(){};
 

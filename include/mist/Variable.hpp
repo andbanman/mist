@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -8,30 +9,23 @@
 
 namespace mist {
 
-/** Variable values must be signed so that negative values can represent
- * missing data, and should be as small as possible to save space for very
- * large data sets.
- */
-using VariableData = std::int8_t;
-
 /** Variable wraps a pointer to a data column.
  */
 class Variable
 {
-private:
-  std::shared_ptr<VariableData> data;
-  std::size_t _size;
-  std::size_t _index;
-  std::size_t _bins;
-
 public:
-  using data_type = VariableData;
-  using data_ptr = std::shared_ptr<data_type>;
+  /** Variable values must be signed so that negative values can represent
+   * missing data, and should be as small as possible to save space for very
+   * large data sets.
+   */
+  using data_t = std::int8_t;
+  using data_ptr = std::shared_ptr<data_t>;
+  using index_t = std::uint32_t;
+  using indexes = std::vector<index_t>;
   using tuple = std::vector<Variable>;
-  using indexes = std::vector<int>;
 
-  using iterator = data_type*;
-  using const_iterator = const data_type*;
+  using iterator = data_t*;
+  using const_iterator = const data_t*;
 
   Variable();
 
@@ -69,16 +63,16 @@ public:
 
   /** Test if value is classified as missing.
    */
-  static bool missingVal(data_type const val);
+  static bool missingVal(data_t const val);
 
-  data_type& operator[](std::size_t pos);
-  data_type const& operator[](std::size_t pos) const;
+  data_t& operator[](std::size_t pos);
+  data_t const& operator[](std::size_t pos) const;
 
   /**
    * @exception out_of_range
    */
-  data_type& at(std::size_t const pos);
-  data_type const& at(std::size_t const pos) const;
+  data_t& at(std::size_t const pos);
+  data_t const& at(std::size_t const pos) const;
 
   /**
    * Variable uses default move and copy constructors that are shallow and
@@ -106,6 +100,12 @@ public:
   const_iterator end() const;
   iterator begin();
   iterator end();
+
+private:
+  std::shared_ptr<data_t> data;
+  std::size_t _size;
+  std::size_t _index;
+  std::size_t _bins;
 };
 
 class VariableException : public std::exception

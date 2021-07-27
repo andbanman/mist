@@ -16,7 +16,7 @@ compute_2d(EntropyCalculator& ecalc, Variable::indexes const& vars)
   auto e0 = ecalc.entropy({ vars[0] });
   auto e1 = ecalc.entropy({ vars[1] });
   auto e01 = ecalc.entropy({ vars[0], vars[1] });
-  SymmetricDelta::data_type DD = e0 + e1 - e01;
+  SymmetricDelta::data_t DD = e0 + e1 - e01;
   res[(int)sub2::entropy0] = e0;
   res[(int)sub2::entropy1] = e1;
   res[(int)sub2::entropy01] = e01;
@@ -35,7 +35,7 @@ compute_2d(EntropyCalculator& ecalc,
   auto e0 = entropy[(int)d2::e0];
   auto e1 = entropy[(int)d2::e1];
   auto e01 = entropy[(int)d2::e01];
-  SymmetricDelta::data_type DD = e0 + e1 - e01;
+  SymmetricDelta::data_t DD = e0 + e1 - e01;
   res[(int)sub2::entropy0] = e0;
   res[(int)sub2::entropy1] = e1;
   res[(int)sub2::entropy01] = e01;

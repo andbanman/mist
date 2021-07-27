@@ -23,12 +23,12 @@ TupleSpace::TupleSpace(int N, int d)
     throw TupleSpaceException("TupleSpace",
                               "Number of variables and dimension cannot be zero.");
   }
-  tuple_type vars(N);
+  tuple_t vars(N);
   for (int ii = 0; ii < N; ii++) {
     vars[ii] = ii;
   }
   this->addVariableGroup("default", vars);
-  tuple_type groupTuple(d, 0);
+  tuple_t groupTuple(d, 0);
   this->addVariableGroupTuple(groupTuple);
 };
 
@@ -53,7 +53,7 @@ TupleSpace::tupleSize() const
 void
 TupleSpace::addVariableGroupTuple(std::vector<std::string> const& groupNames)
 {
-  TupleSpace::tuple_type groupIndexes;
+  TupleSpace::tuple_t groupIndexes;
   for (auto& name : groupNames) {
     try {
       groupIndexes.push_back(variableGroupNames[name]);
@@ -66,7 +66,7 @@ TupleSpace::addVariableGroupTuple(std::vector<std::string> const& groupNames)
 }
 
 void
-TupleSpace::addVariableGroupTuple(TupleSpace::tuple_type const& groupIndexes)
+TupleSpace::addVariableGroupTuple(TupleSpace::tuple_t const& groupIndexes)
 {
   // validate tuple size
   if (!tuple_size) {
@@ -89,10 +89,10 @@ TupleSpace::addVariableGroupTuple(TupleSpace::tuple_type const& groupIndexes)
 
 int
 TupleSpace::addVariableGroup(std::string const& name,
-                             TupleSpace::tuple_type const& vars)
+                             TupleSpace::tuple_t const& vars)
 {
   std::set<int> unique_vars;
-  tuple_type group;
+  tuple_t group;
   for (auto var : vars) {
     // ignore duplicates within variable group
     if (unique_vars.find(var) == unique_vars.end()) {
@@ -117,7 +117,7 @@ TupleSpace::addVariableGroup(std::string const& name,
   return index;
 }
 
-TupleSpace::tuple_type const&
+TupleSpace::tuple_t const&
 TupleSpace::getVariableGroup(int index) const
 {
   try {
@@ -129,7 +129,7 @@ TupleSpace::getVariableGroup(int index) const
   }
 }
 
-TupleSpace::tuple_type const&
+TupleSpace::tuple_t const&
 TupleSpace::getVariableGroup(std::string const& name) const
 {
   try {
@@ -146,13 +146,13 @@ TupleSpace::getVariableGroupSizes() const
     return variableGroupSizes;
 }
 
-std::vector<TupleSpace::tuple_type> const&
+std::vector<TupleSpace::tuple_t> const&
 TupleSpace::getVariableGroups() const
 {
   return variableGroups;
 }
 
-std::vector<TupleSpace::tuple_type> const&
+std::vector<TupleSpace::tuple_t> const&
 TupleSpace::getVariableGroupTuples() const
 {
   return variableGroupTuples;
@@ -164,7 +164,7 @@ TupleSpace::pyAddVariableGroup(std::string const& name, p::list const& list)
 {
   int n = p::len(list);
   // copy list in
-  algorithm::TupleSpace::tuple_type vars(n);
+  algorithm::TupleSpace::tuple_t vars(n);
   for (int ii = 0; ii < n; ii++) {
     p::extract<int> var(list[ii]);
     if (var.check()) {
@@ -180,10 +180,10 @@ TupleSpace::pyAddVariableGroup(std::string const& name, p::list const& list)
 void
 TupleSpace::pyAddVariableGroupTuple(p::list const& list)
 {
-  int n = p::len(list);
-  algorithm::TupleSpace::tuple_type groups(n);
+  int n = p::len(list); // Doesn't give the right answer ...
+  algorithm::TupleSpace::tuple_t groups(n);
   for (int ii = 0; ii < n; ii++) {
-    p::extract<int> gint(list[ii]);
+    p::extract<int> gint(list[ii]); //TODO segaults
     p::extract<std::string> gname(list[ii]);
     if (gint.check()) {
       groups[ii] = p::extract<int>(list[ii]);
@@ -204,19 +204,19 @@ TupleSpace::pyAddVariableGroupTuple(p::list const& list)
 }
 #endif
 
-static unsigned long long
+static TupleSpace::tuple_index_t
 binomial(long double n, long double r)
 {
   if (n == 0 || r == 0 || n == r) {
     return 1;
   } else {
-    return (unsigned long long)(lroundl(n / (n - r) / r *
+    return (TupleSpace::tuple_index_t)(lroundl(n / (n - r) / r *
                           expl(lgammal(n) - lgammal(n - r) - lgammal(r))));
   }
 }
 
 static std::vector<std::size_t>
-groupSizes(std::vector<TupleSpace::tuple_type> const& groups)
+groupSizes(std::vector<TupleSpace::tuple_t> const& groups)
 {
   std::vector<std::size_t> group_sizes;
   for (auto& group : groups) {
@@ -225,27 +225,27 @@ groupSizes(std::vector<TupleSpace::tuple_type> const& groups)
   return group_sizes;
 }
 
-static TupleSpace::tuple_type
-groupAppearances(int d, TupleSpace::tuple_type const& group_tuple, int pos)
+static TupleSpace::tuple_t
+groupAppearances(int d, TupleSpace::tuple_t const& group_tuple, int pos)
 {
   // count group appearances following the current index
-  TupleSpace::tuple_type app(d, 0);
+  TupleSpace::tuple_t app(d, 0);
   for (int gg = pos; gg < group_tuple.size(); gg++) {
     app[group_tuple[gg]]++;
   }
   return app;
 }
 
-static TupleSpace::tuple_type
-groupAppearances(int d, TupleSpace::tuple_type const& group_tuple)
+static TupleSpace::tuple_t
+groupAppearances(int d, TupleSpace::tuple_t const& group_tuple)
 {
   return groupAppearances(d, group_tuple, 0);
 }
 
-unsigned long long
-TupleSpace::count_tuples_group_tuple(tuple_type const& group_tuple) const
+TupleSpace::tuple_index_t
+TupleSpace::count_tuples_group_tuple(tuple_t const& group_tuple) const
 {
-  long total = 1;
+  tuple_index_t total = 1;
   auto const& N = this->variableGroupSizes;
   auto d = N.size();
   auto a = groupAppearances(d, group_tuple);
@@ -255,10 +255,10 @@ TupleSpace::count_tuples_group_tuple(tuple_type const& group_tuple) const
   return total;
 }
 
-unsigned long long
+TupleSpace::tuple_index_t
 TupleSpace::count_tuples() const
 {
-  long total = 0;
+  tuple_index_t total = 0;
   for (auto const& group_tuple : this->variableGroupTuples) {
     total += count_tuples_group_tuple(group_tuple);
   }
@@ -291,12 +291,12 @@ find_group(long* count, long target, TupleSpace const& ts)
 //      find_index(..., pos=2, ...) returns 8.
 //
 static int
-find_index(TupleSpace::tuple_type const& group_tuple,
+find_index(TupleSpace::tuple_t const& group_tuple,
            int pos,
            long* count,
            long target,
            std::vector<std::size_t> const& N,
-           TupleSpace::tuple_type& starts)
+           TupleSpace::tuple_t& starts)
 {
   int ii = 0;                // index
   int gi = group_tuple[pos]; // group corresponding to index
@@ -328,7 +328,7 @@ find_index(TupleSpace::tuple_type const& group_tuple,
 }
 
 
-TupleSpace::tuple_type
+TupleSpace::tuple_t
 TupleSpace::find_tuple(long target) const
 {
   // The fast-forward algorithm maintains a skipped tuple count so that when
@@ -341,11 +341,11 @@ TupleSpace::find_tuple(long target) const
   // scan ahead to the group tuple that generates the target tuple
   int gg = find_group(&count, target, *this);
   auto tuple_size = group_tuples[gg].size();
-  std::vector<int> ret(tuple_size + 1);
+  tuple_t ret(tuple_size + 1);
   ret[0] = gg;
 
   // scan to the target tuple
-  tuple_type starts(N.size(), 0);
+  tuple_t starts(N.size(), 0);
   for (int ii = 0; ii < tuple_size; ii++) {
     ret[ii + 1] = find_index(group_tuples[gg], ii, &count, target, N, starts);
   }

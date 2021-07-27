@@ -22,7 +22,7 @@ DataMatrix::DataMatrix(int ncol, int nrow, int b)
 {
   for (int ii = 0; ii < ncol; ii++) {
     vectors.push_back(
-      mist::Variable::data_ptr(new mist::Variable::data_type[nrow]));
+      mist::Variable::data_ptr(new mist::Variable::data_t[nrow]));
     for (int jj = 0; jj < nrow; jj++) {
       vectors[ii].get()[jj] = 0;
     }
@@ -45,7 +45,7 @@ DataMatrix::DataMatrix(int data[], int ncol, int nrow)
 {
   for (int ii = 0; ii < ncol; ii++) {
     vectors.push_back(
-      mist::Variable::data_ptr(new mist::Variable::data_type[nrow]));
+      mist::Variable::data_ptr(new mist::Variable::data_t[nrow]));
     int bin = 0;
     for (int jj = 0; jj < nrow; jj++) {
       bin = std::max(bin, data[nrow * ii + jj] + 1);
@@ -67,7 +67,7 @@ DataMatrix::DataMatrix(np::ndarray const& np)
   // To support direct data use without copying, the input must be
   // the correct type and c-style contiguous.
   // Verify type agreement.
-  auto required_dtype = np::dtype::get_builtin<Variable::data_type>();
+  auto required_dtype = np::dtype::get_builtin<Variable::data_t>();
   if (np.get_dtype() != required_dtype) {
     throw DataMatrixException(
       "DataMatrix",
@@ -76,7 +76,7 @@ DataMatrix::DataMatrix(np::ndarray const& np)
         ", check numpy.ndarray.dtype");
   }
 
-  auto data = (Variable::data_type*)np.get_data();
+  auto data = (Variable::data_t*)np.get_data();
   nrow = np.shape(0);
   ncol = np.shape(1);
 
@@ -161,7 +161,7 @@ DataMatrix::DataMatrix(std::string const& filename, bool rowmajor)
   // initialize vectors
   for (int ii = 0; ii < nvar; ii++) {
     vectors.push_back(mist::Variable::data_ptr(
-      new mist::Variable::data_type[svar])); // TODO: valgrind error on new
+      new mist::Variable::data_t[svar])); // TODO: valgrind error on new
   }
 
   // Read data into matrix
