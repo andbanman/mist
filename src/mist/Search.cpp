@@ -466,7 +466,7 @@ Search::init_caches()
         ts, rank_bounds[ii][0], rank_bounds[ii][1], calc, {}, entropy_measure);
     }
     for (int ii = 0; ii < ranks - 1; ii++) {
-      threads[ii] = std::thread(&algorithm::Worker::start, workers[ii]);
+      threads[ii] = std::thread(&algorithm::Worker::start, &workers[ii]);
     }
     workers.back().start();
     for (auto& thread : threads) {
@@ -593,7 +593,7 @@ Search::start()
 
   // Start child ranks
   for (int ii = 0; ii < ranks - 1; ii++) {
-    threads[ii] = std::thread(&algorithm::Worker::start, workers[ii]);
+    threads[ii] = std::thread(&algorithm::Worker::start, &workers[ii]);
   }
   workers.back().start();
 
