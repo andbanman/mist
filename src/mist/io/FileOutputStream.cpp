@@ -35,13 +35,13 @@ FileOutputStream::init()
 // snprintf with pre-allocated buffer faster than sstream and
 // boost::lexical_cast
 inline std::string
-double_to_string_fast(FileOutputStream::buffer_type buff, double v)
+double_to_string_fast(FileOutputStream::buffer_type &buff, double v)
 {
   std::string ret; // declare return to encourage RVO
   snprintf(buff.data(), DOUBLE_BUFFER_MAX_SIZE - 1, "%g", v);
   buff.data()[DOUBLE_BUFFER_MAX_SIZE - 1] = '\0';
   ret = buff.data();
-  return ret;
+  return ret; // TODO Malloc thrashing here
 }
 
 void
