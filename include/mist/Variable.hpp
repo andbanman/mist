@@ -19,7 +19,7 @@ public:
    * large data sets.
    */
   using data_t = std::int8_t;
-  using data_ptr = std::shared_ptr<data_t>;
+  using data_ptr = std::shared_ptr<data_t[]>;
   using index_t = std::uint32_t;
   using indexes = std::vector<index_t>;
   using tuple = std::vector<Variable>;
@@ -102,7 +102,7 @@ public:
   iterator end();
 
 private:
-  std::shared_ptr<data_t> data;
+  data_ptr data;
   std::size_t _size;
   std::size_t _index;
   std::size_t _bins;

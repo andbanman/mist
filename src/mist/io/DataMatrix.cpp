@@ -13,6 +13,10 @@ issep(char c)
   return (std::isspace(c) || c == ',');
 }
 
+DataMatrix::~DataMatrix()
+{
+}
+
 // each column a variable
 DataMatrix::DataMatrix(std::size_t ncol, std::size_t nrow, data_t b)
   : ncol(ncol)
@@ -234,14 +238,16 @@ DataMatrix::get_variable(index_t i)
   return mist::Variable(vectors[i], svar, i, bins[i]);
 };
 
-Variable::tuple*
+DataMatrix::variables_ptr
 DataMatrix::variables()
 {
-  Variable::tuple* ret = new Variable::tuple(nvar);
-  for (index_t ii = 0; ii < nvar; ii++) {
-    (*ret)[ii] = this->get_variable(ii);
+  if (!this->_variables) {
+    this->_variables = variables_ptr(new Variable::tuple(nvar));
   }
-  return ret;
+  for (index_t ii = 0; ii < nvar; ii++) {
+    (*this->_variables)[ii] = this->get_variable(ii);
+  }
+  return this->_variables;
 }
 
 void

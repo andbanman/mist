@@ -41,6 +41,7 @@ class DataMatrix
 public:
   using data_t = Variable::data_t;
   using index_t = Variable::index_t;
+  using variables_ptr = std::shared_ptr<Variable::tuple>;
 
   // allocate empty matrix
   DataMatrix(std::size_t ncol, std::size_t nrow, data_t b);
@@ -51,9 +52,10 @@ public:
   // each column is a variable
   DataMatrix(std::string const& filename);
   DataMatrix(std::string const& filename, bool rowmajor);
+  ~DataMatrix();
 
   Variable get_variable(index_t i);
-  Variable::tuple* variables();
+  variables_ptr variables();
   std::size_t get_nvar() const; std::size_t get_svar() const;
   std::size_t get_ncol() const;
   std::size_t get_nrow() const;
@@ -68,6 +70,7 @@ public:
   std::vector<data_t> bins;
 
 private:
+  variables_ptr _variables;
   std::size_t ncol;
   std::size_t nrow;
   std::size_t nvar;
