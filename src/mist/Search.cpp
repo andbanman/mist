@@ -1,8 +1,10 @@
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
 #include <limits>
+#include <queue>
 #include <memory>
 #include <stdexcept>
 #include <thread>
@@ -69,6 +71,7 @@ struct Search::impl
   bool full_output = false;
   bool in_memory_output = true;
   bool use_cutoff = false;
+  bool show_progress = false;
   // whether this Search is participating in a parallel search
   bool parallel_search = false;
   int ranks;
@@ -250,6 +253,17 @@ long
 Search::get_tuple_limit()
 {
   return pimpl->tuple_limit;
+}
+
+void
+Search::set_show_progress(bool show_progress)
+{
+  pimpl->show_progress = show_progress;
+}
+bool
+Search::get_show_progress()
+{
+  return pimpl->show_progress;
 }
 
 void
@@ -502,6 +516,50 @@ configure_in_memory_output(std::vector<flat_stream_ptr> &mem_outputs,
   }
 }
 
+static count_t
+get_progress(std::vector<algorithm::Worker> const& workers)
+{
+  count_t count = 0;
+  for (auto const& worker : workers) {
+    count += worker.tuple_count();
+  }
+  return count;
+}
+
+static void
+wait_print_progress(std::vector<algorithm::Worker> const& workers,
+                    count_t tuple_count)
+{
+  std::size_t max_sample_size = 20;
+  std::chrono::seconds sleep_duration(1);
+  std::queue<count_t> samples;
+  samples.push(get_progress(workers));
+  auto current = samples.back();
+  unsigned remain = -1;
+  while (current < tuple_count) {
+    // TODO use futures to check when threads are done in case of errors
+    // ... very confident in the stopping condition ...
+    std::this_thread::sleep_for(sleep_duration);
+    samples.push(get_progress(workers));
+    if (samples.size() > max_sample_size) {
+      samples.pop();
+    }
+    current = samples.back();
+    unsigned percent = 100 * (double) current / (double) tuple_count;
+    double tuples = (samples.back() - samples.front());
+    double interval = sleep_duration.count() * samples.size();
+    double rate = (!tuples) ? 0 : interval / tuples;
+    count_t tuple_rate = tuples / interval;
+    // managed perceived performance by not allowing remaining time to increment
+    remain = std::min(remain, (unsigned) ((tuple_count - current) * rate));
+    std::cerr.clear();
+    std::cerr.flush();
+    std::fprintf(stderr, "Tuples processed: [%%%02u] %lu/%lu Tuples/s: %lu ETA(s): %-40u\r",
+                 percent, current, tuple_count, tuple_rate, remain);
+    std::cerr.flush();
+  }
+}
+
 //
 // Run full algoirithm as configured
 //
@@ -528,6 +586,7 @@ Search::start()
     (pimpl->parallel_search) ? pimpl->total_ranks : pimpl->ranks;
   auto start_rank = pimpl->start_rank;
   auto ranks = pimpl->ranks;
+  auto num_threads = (pimpl->show_progress) ? pimpl->ranks : (pimpl->ranks - 1);
 
   // load default tuplespace if one has not been set yet
   if (!pimpl->tuple_space) {
@@ -565,7 +624,7 @@ Search::start()
   }
 
   std::vector<algorithm::Worker> workers(ranks);
-  std::vector<std::thread> threads(ranks - 1);
+  std::vector<std::thread> threads(num_threads);
   // Create Workers
   for (int ii = 0; ii < ranks; ii++) {
     // each worker gets own calc, with own buffer probability distribution
@@ -593,10 +652,15 @@ Search::start()
   }
 
   // Start child ranks
-  for (int ii = 0; ii < ranks - 1; ii++) {
+  for (int ii = 0; ii < num_threads; ii++) {
     threads[ii] = std::thread(&algorithm::Worker::start, &workers[ii]);
   }
-  workers.back().start();
+
+  if (pimpl->show_progress) {
+    wait_print_progress(workers, tuple_count);
+  } else {
+    workers.back().start();
+  }
 
   // join other threads
   for (auto& thread : threads) {

@@ -146,6 +146,15 @@ public:
   void set_tuple_limit(long limit);
   long get_tuple_limit();
 
+  /** Toggle whether to write program progress to stderr.
+   *
+   * When true, an extra thread will be made to watch progress through the
+   * TupleSpace. This option is especially useful for large searches to
+   * estimate how long the run will take.
+   */
+  void set_show_progress(bool);
+  bool get_show_progress();
+
   /** Include all subcalculations in the output
    */
   void set_output_intermediate(bool);

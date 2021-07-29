@@ -116,6 +116,7 @@ int main(int argc, char *argv[]) {
         ("tuple-size,s", po::value(&param.tuple_size)->default_value(dparam.tuple_size), "Number of variables in each tuple")
         ("tuple-limit,l", po::value(&param.tuple_limit)->default_value(dparam.tuple_limit), "Maximum number of tuples to process")
         ("measure,m", po::value(&param.measure)->default_value(dparam.measure), "Information Theory Measure")
+        ("progress,p", "Print progress to stderr")
         ("version,v", "Print version string and exit")
     ;
 
@@ -145,6 +146,7 @@ int main(int argc, char *argv[]) {
     bool help = vm.count("help");
     bool debug = vm.count("debug");
     bool version = vm.count("version");
+    bool progress = vm.count("progress");
 
     mist::Search mist;
 
@@ -176,6 +178,7 @@ int main(int argc, char *argv[]) {
     //
     mist.set_probability_algorithm(param.pd_algorithm);
     mist.set_ranks(param.num_threads);
+    mist.set_show_progress(progress);
     mist.set_outfile(param.outfile);
     mist.load_file(param.infile);
     mist.start();

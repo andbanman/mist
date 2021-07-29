@@ -13,6 +13,7 @@ void
 Worker::process_tuple(count_t tuple_no, tuple_t const& tuple)
 {
   this->measure->compute(*this->calc, tuple, this->result);
+  ++(*this->tuples);
   if (result.back() < cutoff) {
     return;
   }
@@ -29,6 +30,7 @@ void
 Worker::process_tuple_entropy(count_t tuple_no, tuple_t const& tuple, it::Entropy const& e)
 {
   this->measure->compute(*this->calc, tuple, e, this->result);
+  ++(*this->tuples);
   if (result.back() < cutoff) {
     return;
   }
@@ -52,6 +54,12 @@ Worker::start()
   else {
     ts->traverse(start_no, stop_no, *this);
   }
+}
+
+Worker::count_t
+Worker::tuple_count() const
+{
+  return this->tuples->load();
 }
 
 Worker::~Worker() {}
@@ -81,7 +89,10 @@ Worker::Worker(Worker const& other)
   , calc(new it::EntropyCalculator(*other.calc))
   , out_streams(other.out_streams)
   , measure(other.measure)
-{}
+  , tuples(new atomic_count_t)
+{
+  tuples->store(0);
+}
 
 Worker&
 Worker::operator=(Worker const& other)
@@ -93,6 +104,8 @@ Worker::operator=(Worker const& other)
   calc = entropy_calc_ptr(new it::EntropyCalculator(*other.calc));
   out_streams = other.out_streams;
   measure = other.measure;
+  tuples = std::unique_ptr<atomic_count_t>(new atomic_count_t);
+  tuples->store(other.tuples->load());
   return *this;
 }
 
@@ -110,6 +123,7 @@ Worker::Worker(tuple_space_ptr const& ts,
   , calc(std::move(calc))
   , out_streams(out_streams)
   , measure(measure)
+  , tuples(new atomic_count_t)
 {
   // cannot set these in member initialization list?
   if (ts->getVariableGroups().empty()) {
@@ -123,4 +137,5 @@ Worker::Worker(tuple_space_ptr const& ts,
       throw WorkerException("Worker", "Invalid output stream");
     }
   }
+  tuples->store(0);
 }

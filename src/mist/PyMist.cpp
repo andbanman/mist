@@ -61,6 +61,8 @@ BOOST_PYTHON_MODULE(libmist)
     .add_property(
       "tuple_space", &Search::get_tuple_space, &Search::set_tuple_space)
     .add_property(
+      "show_progress", &Search::get_show_progress, &Search::set_show_progress)
+    .add_property(
       "cache_enabled", &Search::get_cache_enabled, &Search::set_cache_enabled)
     .add_property(
       "cache_size_bytes",

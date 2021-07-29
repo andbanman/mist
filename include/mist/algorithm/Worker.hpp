@@ -29,6 +29,7 @@ public:
   using tuple_t = Variable::indexes;
   using count_t = TupleSpace::count_t;
   using result_t = it::entropy_type;
+  using atomic_count_t = std::atomic<count_t>;
 
   // Typedefs for convenience expressing the algorithm
 
@@ -76,6 +77,8 @@ public:
   void process_tuple(count_t tuple_no, tuple_t const& tuple);
   void process_tuple_entropy(count_t tuple_no, tuple_t const& tuple, it::Entropy const& e);
 
+  count_t tuple_count() const;
+
 private:
   tuple_space_ptr ts;
   entropy_calc_ptr calc;
@@ -86,6 +89,8 @@ private:
   result_t cutoff;
   // keep a result buffered to aviod malloc/free thrashing
   it::Measure::result_type result;
+  // running count of seen tuples
+  std::unique_ptr<atomic_count_t> tuples;
 };
 
 class WorkerException : public std::exception
