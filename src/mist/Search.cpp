@@ -22,6 +22,7 @@ using data_ptr = std::shared_ptr<io::DataMatrix>;
 using output_stream_ptr = std::shared_ptr<io::OutputStream>;
 using file_stream_ptr = std::shared_ptr<io::FileOutputStream>;
 using map_stream_ptr = std::shared_ptr<io::MapOutputStream>;
+using flat_stream_ptr = std::shared_ptr<io::FlatOutputStream>;
 using measure_ptr = std::shared_ptr<it::Measure>;
 using cache_ptr = it::EntropyCalculator::cache_ptr_type;
 using entropy_calc_ptr = std::shared_ptr<it::EntropyCalculator>;
@@ -54,10 +55,11 @@ struct Search::impl
   measure_ptr measure;
   std::string measure_str;
   std::vector<cache_ptr> shared_caches;
-  std::vector<map_stream_ptr> mem_outputs;
+  std::vector<flat_stream_ptr> mem_outputs;
   std::vector<thread_config> threads;
 
   // config
+  it::entropy_type cutoff = 0;
   unsigned long cache_size_bytes = 0;
   algorithm::TupleSpace::index_t tuple_limit = 0;
   bool use_cache = true;
@@ -174,59 +176,24 @@ np::ndarray
 Search::python_get_results()
 {
   if (pimpl->mem_outputs.empty()) {
+    // don't throw, just give the goose
     return np::zeros(p::make_tuple(0, 0), np::dtype::get_builtin<double>());
+  } else {
+    return pimpl->mem_outputs.front()->py_get_results();
   }
-
-  // infer results dimensions
-  auto a_result = pimpl->mem_outputs.front()->get_results().begin();
-  int num_variables = a_result->first.size();
-  int num_results = a_result->second.size();
-
-  // determine number of tuples collected in the output streams
-  long num_tuples = 0;
-  for (auto& ptr : pimpl->mem_outputs) {
-    num_tuples += ptr->get_results().size();
-  }
-
-  // initialize the output ndarray
-  np::ndarray ret =
-    np::zeros(p::make_tuple(num_tuples, num_variables + num_results),
-              np::dtype::get_builtin<double>());
-
-  // copy results into output ndarray
-  int ii = 0;
-  for (auto& ptr : pimpl->mem_outputs) {
-    auto& results = ptr->get_results();
-    for (auto& item : results) {
-      // fill in variable index tuple
-      for (int jj = 0; jj < num_variables; jj++) {
-        ret[ii][jj] = (double)item.first[jj];
-      }
-      // fill in results
-      for (int jj = 0; jj < num_results; jj++) {
-        ret[ii][num_variables + jj] = (double)item.second[jj];
-      }
-      ii++;
-    }
-  }
-
-  return ret;
 }
 #endif
 
 // Returns a copy of the results collected into one data structure
-io::MapOutputStream::map_type
+// TODO reshape to the correct view...
+std::vector<it::entropy_type> const&
 Search::get_results()
 {
-  io::MapOutputStream::map_type ret;
   if (pimpl->mem_outputs.empty()) {
-    return ret;
+    throw SearchException("get_results", "No results in memory");
+  } else {
+    return pimpl->mem_outputs.front()->get_results();
   }
-  for (auto& ptr : pimpl->mem_outputs) {
-    auto& results = ptr->get_results();
-    ret.insert(results.begin(), results.end());
-  }
-  return ret;
 }
 
 void
@@ -478,6 +445,32 @@ Search::init_caches()
   }
 }
 
+static void
+configure_in_memory_output(std::vector<flat_stream_ptr> &mem_outputs,
+                           it::entropy_type cutoff,
+                           std::size_t num_thread,
+                           std::size_t tuple_count,
+                           std::size_t tuple_offset,
+                           std::size_t rowsize)
+{
+  mem_outputs.clear();
+  if (cutoff) {
+    // can't know real size of the output, use dynamically expanding pattern
+    mem_outputs.resize(num_thread);
+    for (int ii = 0; ii < num_thread; ii++) {
+      mem_outputs[0] = flat_stream_ptr(new io::FlatOutputStream(tuple_offset));
+    }
+  } else {
+    try {
+      // attempt to make single output, preferred for performance
+      mem_outputs.resize(1);
+      mem_outputs[0] = flat_stream_ptr(new io::FlatOutputStream(tuple_count, rowsize, tuple_offset));
+    } catch (io::FileOutputStreamException &e) {
+      throw SearchException("start", "Could not allocate space for all output tuples. Consider shrinking the TupleSpace, using a cutoff measure value, or switching to file-only output.");
+    }
+  }
+}
+
 //
 // Run full algoirithm as configured
 //
@@ -505,11 +498,16 @@ Search::start()
   auto total_ranks =
     (pimpl->parallel_search) ? pimpl->total_ranks : pimpl->ranks;
   auto start_rank = pimpl->start_rank;
+  auto ranks = pimpl->ranks;
 
   // load default tuplespace if one has not been set yet
   if (!pimpl->tuple_space.tupleSize()) {
     pimpl->tuple_space = algorithm::TupleSpace(nvar, tuple_size);
   }
+
+  // count tuples
+  auto max_tuples = pimpl->tuple_space.count_tuples();
+  auto tuple_count = (pimpl->tuple_limit) ? pimpl->tuple_limit : max_tuples;
 
   // initialize output file stream
   if (!pimpl->outfile.empty()) {
@@ -528,22 +526,28 @@ Search::start()
     init_caches();
   }
 
+  // configure in-memory results output
   if (pimpl->in_memory_output) {
-    pimpl->mem_outputs.clear();
-    pimpl->mem_outputs.resize(num_thread);
+    std::size_t rowsize = pimpl->measure->names(tuple_size, pimpl->full_output).size();
+    //TODO outputing full tuple space even when only a subset
+    double step = (double)tuple_count  / (double)total_ranks;
+    auto tuple_offset = std::size_t (ranks * step);
+    auto tuple_count = std::size_t (ranks * step);
+    configure_in_memory_output(pimpl->mem_outputs, pimpl->cutoff, ranks, tuple_count, tuple_offset, rowsize);
   }
-  std::vector<algorithm::Worker> workers(num_thread);
-  std::vector<std::thread> threads(num_thread - 1);
+
+  std::vector<algorithm::Worker> workers(ranks);
+  std::vector<std::thread> threads(ranks - 1);
   auto calc = makeEntropyCalc(
     pimpl->probability_algorithm, variables, pimpl->shared_caches);
   // Create Workers
-  for (int ii = 0; ii < num_thread; ii++) {
+  for (int ii = 0; ii < ranks; ii++) {
     // Configure output streams. Each worker gets separate output streams
     // to avoid collision (single stream coordinated by mutex is too slow).
     std::vector<output_stream_ptr> out_streams;
     if (pimpl->in_memory_output) {
-      pimpl->mem_outputs[ii] = map_stream_ptr(new io::MapOutputStream());
-      out_streams.push_back(pimpl->mem_outputs[ii]);
+      out_streams.push_back((pimpl->mem_outputs.size() == ranks) ?
+          pimpl->mem_outputs[ii] : pimpl->mem_outputs.front());
     }
     if (pimpl->file_output) {
       out_streams.push_back(std::shared_ptr<io::OutputStream>(
@@ -551,7 +555,7 @@ Search::start()
     }
     workers[ii] = algorithm::Worker(start_rank + ii,
                                     total_ranks,
-                                    pimpl->tuple_limit,
+                                    tuple_count,
                                     pimpl->tuple_space,
                                     calc,
                                     out_streams,
@@ -560,7 +564,7 @@ Search::start()
   }
 
   // Start child ranks
-  for (int ii = 0; ii < num_thread - 1; ii++) {
+  for (int ii = 0; ii < ranks - 1; ii++) {
     threads[ii] = std::thread(&algorithm::Worker::start, workers[ii]);
   }
   workers.back().start();
@@ -568,6 +572,12 @@ Search::start()
   // join other threads
   for (auto& thread : threads) {
     thread.join();
+  }
+
+  // combine in-memory output arrays
+  int narrays = pimpl->mem_outputs.size();
+  for (int ii = 1; ii < narrays; ii++) {
+    pimpl->mem_outputs.front()->relocate(*pimpl->mem_outputs[ii]);
   }
 
   // cleanup output file stream

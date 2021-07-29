@@ -14,6 +14,7 @@ class OutputStream
 {
 protected:
   using result_type = it::Measure::result_type;
+  using data_t = it::Measure::data_t;
   using mutex_type = std::mutex;
   using mutex_ptr = std::shared_ptr<mutex_type>;
   using tuple_type = Variable::indexes;

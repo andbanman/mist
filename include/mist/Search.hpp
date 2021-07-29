@@ -197,7 +197,7 @@ public:
 
   /** Return a copy of all results
    */
-  io::MapOutputStream::map_type get_results();
+  std::vector<it::entropy_type> const& get_results();
 
   /** Print cache statistics for each cache in each thread to stdout.
    */
