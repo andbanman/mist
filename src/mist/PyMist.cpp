@@ -39,6 +39,7 @@ BOOST_PYTHON_MODULE(libmist)
          &algorithm::TupleSpace::pyAddVariableGroupTuple);
 
   p::class_<Search>("Search")
+    .add_property("cutoff", &Search::get_cutoff, &Search::set_cutoff)
     .add_property("measure", &Search::get_measure, &Search::set_measure)
     .add_property("probability_algorithm",
                   &Search::get_probability_algorithm,

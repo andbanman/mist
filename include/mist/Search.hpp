@@ -2,6 +2,7 @@
 
 #include "io/DataMatrix.hpp"
 #include "io/MapOutputStream.hpp"
+#include "it/Entropy.hpp"
 #include <memory>
 #include <stdexcept>
 
@@ -63,6 +64,14 @@ public:
    */
   void set_measure(std::string const& measure);
   std::string get_measure();
+
+  /** Set the minimum IT Measure value to keep in results.
+   *
+   * This option is most useful for dealing with very large TupleSpaces, the
+   * results for which cannot be stored in memory or on disk.
+   */
+  void set_cutoff(it::entropy_type cutoff);
+  it::entropy_type get_cutoff();
 
   /** Set the algorithm for generating probability distributions.
    *

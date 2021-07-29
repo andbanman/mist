@@ -1,6 +1,8 @@
 #include <algorithm>
+#include <cstdlib>
 #include <exception>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <thread>
@@ -59,12 +61,13 @@ struct Search::impl
   std::vector<thread_config> threads;
 
   // config
-  it::entropy_type cutoff = 0;
+  it::entropy_type cutoff = -std::numeric_limits<it::entropy_type>::infinity();
   unsigned long cache_size_bytes = 0;
   algorithm::TupleSpace::index_t tuple_limit = 0;
   bool use_cache = true;
   bool full_output = false;
   bool in_memory_output = true;
+  bool use_cutoff = false;
   // whether this Search is participating in a parallel search
   bool parallel_search = false;
   int ranks;
@@ -129,6 +132,19 @@ Search::get_measure()
 {
   return pimpl->measure_str;
 }
+
+void
+Search::set_cutoff(it::entropy_type cutoff)
+{
+  pimpl->cutoff = cutoff;
+  pimpl->use_cutoff = true;
+}
+it::entropy_type
+Search::get_cutoff()
+{
+  return pimpl->cutoff;
+}
+
 
 void
 Search::set_probability_algorithm(std::string const& algorithm)
@@ -462,7 +478,7 @@ Search::init_caches()
 
 static void
 configure_in_memory_output(std::vector<flat_stream_ptr> &mem_outputs,
-                           it::entropy_type cutoff,
+                           bool cutoff,
                            std::size_t ranks,
                            std::size_t tuple_count,
                            std::size_t tuple_offset,
@@ -473,7 +489,7 @@ configure_in_memory_output(std::vector<flat_stream_ptr> &mem_outputs,
     // can't know real size of the output, use dynamically expanding pattern
     mem_outputs.resize(ranks);
     for (int ii = 0; ii < ranks; ii++) {
-      mem_outputs[0] = flat_stream_ptr(new io::FlatOutputStream(tuple_offset));
+      mem_outputs[ii] = flat_stream_ptr(new io::FlatOutputStream(rowsize, tuple_offset));
     }
   } else {
     try {
@@ -540,7 +556,7 @@ Search::start()
     std::size_t rowsize = pimpl->measure->names(tuple_size, pimpl->full_output).size();
     auto tuple_offset = rank_bounds[start_rank][0];
     auto size = rank_bounds[start_rank+ranks-1][1] - rank_bounds[start_rank][0];
-    configure_in_memory_output(pimpl->mem_outputs, pimpl->cutoff, ranks, size, tuple_offset, rowsize);
+    configure_in_memory_output(pimpl->mem_outputs, pimpl->use_cutoff, ranks, size, tuple_offset, rowsize);
   }
 
   // Only use caches for measures that use intermediate entropies
@@ -568,6 +584,7 @@ Search::start()
     workers[ii] = algorithm::Worker(pimpl->tuple_space,
                                     rank_bounds[start_rank + ii][0],
                                     rank_bounds[start_rank + ii][1],
+                                    pimpl->cutoff,
                                     calc,
                                     out_streams,
                                     pimpl->measure);

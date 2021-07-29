@@ -4,6 +4,7 @@
 
 #include "algorithm/TupleSpace.hpp"
 #include "io/OutputStream.hpp"
+#include "it/Entropy.hpp"
 #include "it/EntropyCalculator.hpp"
 #include "it/Measure.hpp"
 #include "Variable.hpp"
@@ -25,6 +26,7 @@ public:
   using measure_ptr = std::shared_ptr<it::Measure>;
   using tuple_t = Variable::indexes;
   using count_t = TupleSpace::count_t;
+  using result_t = it::entropy_type;
 
   // Typedefs for convenience expressing the algorithm
 
@@ -32,12 +34,24 @@ public:
   Worker();
   /** Construct and configure a Worker instance.
    *
-   * @param rank Zero-indexed rank number [0, ranks]
-   * @param ranks Total number of Workers participating in the search
-   * @param limit Upper limit on number of tuples to processes by all Workers
    * @param ts TupleSpace that defines the tuple search space
+   * @param start Start processing at start tuple number
+   * @param stop Stop processing when stop tuple number is reached
+   * @param cutoff Discard all tuples from output with a measure less than cutoff
    * @param out_streams Collection OutputStream pointers to send results
    * @param measure The it::Measure to calculate the results
+   */
+  Worker(TupleSpace const& ts,
+         count_t start,
+         count_t stop,
+         result_t cutoff,
+         entropy_calc_ptr calc,
+         std::vector<output_stream_ptr> out_streams,
+         measure_ptr measure);
+
+  /** Construct and configure a Worker instance.
+   *
+   * Cutoff is not used in the this instance.
    */
   Worker(TupleSpace const& ts,
          count_t start,
@@ -63,6 +77,7 @@ private:
   measure_ptr measure;
   count_t start_no;
   count_t stop_no;
+  result_t cutoff;
 };
 
 class WorkerException : public std::exception
