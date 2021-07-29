@@ -390,17 +390,30 @@ makeEntropyCalc(probability_algorithms const& type,
   return entropy_calc_ptr(calc);
 }
 
+using count_t = algorithm::TupleSpace::count_t;
+static std::vector<count_t[2]>
+divide_tuple_space(count_t total_ranks, count_t tuple_count)
+{
+  std::vector<count_t[2]> rank_bounds(total_ranks); // [start,stop)
+  auto step = tuple_count / total_ranks;
+  rank_bounds[0][0] = 0;
+  rank_bounds[0][1] = step;
+  for (auto rr = 1; rr < total_ranks; rr++) {
+    rank_bounds[rr][0] = rank_bounds[rr - 1][1];
+    rank_bounds[rr][1] = (rr + 1) * step;
+  }
+  rank_bounds[total_ranks-1][1] = tuple_count;
+  return rank_bounds;
+}
+
 void
 Search::init_caches()
 {
   auto entropy_measure = measure_ptr(new it::EntropyMeasure());
   int nvar = pimpl->data->get_nvar();
-  int num_thread = pimpl->ranks;
+  int ranks = pimpl->ranks;
   int ncache = (pimpl->tuple_size > 2) ? 2 : 1;
   auto variables = pimpl->data->variables();
-  auto total_ranks =
-    (pimpl->parallel_search) ? pimpl->total_ranks : pimpl->ranks;
-  auto start_rank = pimpl->start_rank;
 
   pimpl->shared_caches.resize(ncache);
 
@@ -424,18 +437,20 @@ Search::init_caches()
       // cannot allocate this cache, stop the cache init
       break;
     }
-    std::vector<algorithm::Worker> workers(num_thread);
-    std::vector<std::thread> threads(num_thread - 1);
+    std::vector<algorithm::Worker> workers(ranks);
+    std::vector<std::thread> threads(ranks - 1);
     std::vector<cache_ptr> caches = { pimpl->shared_caches[cc] };
     auto ts = algorithm::TupleSpace(nvar, d); //TODO: make it closer to the real TupleSpace ...
+    auto tuple_count = ts.count_tuples();
+    auto rank_bounds = divide_tuple_space(ranks, tuple_count);
     auto calc =
       makeEntropyCalc(pimpl->probability_algorithm, variables, caches);
 
-    for (int ii = 0; ii < num_thread; ii++) {
+    for (int ii = 0; ii < ranks; ii++) {
       workers[ii] = algorithm::Worker(
-        start_rank + ii, total_ranks, 0, ts, calc, {}, entropy_measure);
+        ts, rank_bounds[ii][0], rank_bounds[ii][1], calc, {}, entropy_measure);
     }
-    for (int ii = 0; ii < num_thread - 1; ii++) {
+    for (int ii = 0; ii < ranks - 1; ii++) {
       threads[ii] = std::thread(&algorithm::Worker::start, workers[ii]);
     }
     workers.back().start();
@@ -448,7 +463,7 @@ Search::init_caches()
 static void
 configure_in_memory_output(std::vector<flat_stream_ptr> &mem_outputs,
                            it::entropy_type cutoff,
-                           std::size_t num_thread,
+                           std::size_t ranks,
                            std::size_t tuple_count,
                            std::size_t tuple_offset,
                            std::size_t rowsize)
@@ -456,8 +471,8 @@ configure_in_memory_output(std::vector<flat_stream_ptr> &mem_outputs,
   mem_outputs.clear();
   if (cutoff) {
     // can't know real size of the output, use dynamically expanding pattern
-    mem_outputs.resize(num_thread);
-    for (int ii = 0; ii < num_thread; ii++) {
+    mem_outputs.resize(ranks);
+    for (int ii = 0; ii < ranks; ii++) {
       mem_outputs[0] = flat_stream_ptr(new io::FlatOutputStream(tuple_offset));
     }
   } else {
@@ -465,7 +480,7 @@ configure_in_memory_output(std::vector<flat_stream_ptr> &mem_outputs,
       // attempt to make single output, preferred for performance
       mem_outputs.resize(1);
       mem_outputs[0] = flat_stream_ptr(new io::FlatOutputStream(tuple_count, rowsize, tuple_offset));
-    } catch (io::FileOutputStreamException &e) {
+    } catch (io::FlatOutputStreamException &e) {
       throw SearchException("start", "Could not allocate space for all output tuples. Consider shrinking the TupleSpace, using a cutoff measure value, or switching to file-only output.");
     }
   }
@@ -492,8 +507,6 @@ Search::start()
 
   int nvar = pimpl->data->get_nvar();
   int tuple_size = pimpl->tuple_size;
-  int num_thread =
-    (!pimpl->ranks) ? std::thread::hardware_concurrency() : pimpl->ranks;
   auto variables = pimpl->data->variables();
   auto total_ranks =
     (pimpl->parallel_search) ? pimpl->total_ranks : pimpl->ranks;
@@ -505,9 +518,10 @@ Search::start()
     pimpl->tuple_space = algorithm::TupleSpace(nvar, tuple_size);
   }
 
-  // count tuples
+  // Divide the tuple space into chunks for each rank
   auto max_tuples = pimpl->tuple_space.count_tuples();
   auto tuple_count = (pimpl->tuple_limit) ? pimpl->tuple_limit : max_tuples;
+  auto rank_bounds = divide_tuple_space(total_ranks, tuple_count);
 
   // initialize output file stream
   if (!pimpl->outfile.empty()) {
@@ -521,19 +535,17 @@ Search::start()
     }
   }
 
-  // Only use caches for measures that use intermediate entropies
-  if (pimpl->use_cache && pimpl->measure->full_entropy()) {
-    init_caches();
-  }
-
   // configure in-memory results output
   if (pimpl->in_memory_output) {
     std::size_t rowsize = pimpl->measure->names(tuple_size, pimpl->full_output).size();
-    //TODO outputing full tuple space even when only a subset
-    double step = (double)tuple_count  / (double)total_ranks;
-    auto tuple_offset = std::size_t (ranks * step);
-    auto tuple_count = std::size_t (ranks * step);
-    configure_in_memory_output(pimpl->mem_outputs, pimpl->cutoff, ranks, tuple_count, tuple_offset, rowsize);
+    auto tuple_offset = rank_bounds[start_rank][0];
+    auto size = rank_bounds[start_rank+ranks-1][1] - rank_bounds[start_rank][0];
+    configure_in_memory_output(pimpl->mem_outputs, pimpl->cutoff, ranks, size, tuple_offset, rowsize);
+  }
+
+  // Only use caches for measures that use intermediate entropies
+  if (pimpl->use_cache && pimpl->measure->full_entropy()) {
+    init_caches();
   }
 
   std::vector<algorithm::Worker> workers(ranks);
@@ -553,10 +565,9 @@ Search::start()
       out_streams.push_back(std::shared_ptr<io::OutputStream>(
         new io::FileOutputStream(*pimpl->file_output)));
     }
-    workers[ii] = algorithm::Worker(start_rank + ii,
-                                    total_ranks,
-                                    tuple_count,
-                                    pimpl->tuple_space,
+    workers[ii] = algorithm::Worker(pimpl->tuple_space,
+                                    rank_bounds[start_rank + ii][0],
+                                    rank_bounds[start_rank + ii][1],
                                     calc,
                                     out_streams,
                                     pimpl->measure);

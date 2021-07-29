@@ -39,44 +39,28 @@ Worker::process_tuple_entropy(count_t tuple_no, tuple_t const& tuple, it::Entrop
 void
 Worker::start()
 {
-  TupleSpace::index_t total = (limit) ? limit : ts.count_tuples();
-  TupleSpace::index_t step = (total + this->ranks - 1) / this->ranks; // round up
-  TupleSpace::index_t start = step * (this->rank);
-  TupleSpace::index_t stop = start + step;
   bool full = measure->full_entropy();
 
-  if (rank == ranks - 1) {
-    stop = total;
-  }
-
-  // rounding can cause the start to go past the end, stop if theres' no work
-  // for this rank to do
-  if (start >= total) {
-    return;
-  }
-
   if (full) {
-    ts.traverse_entropy(start, stop, *calc.get(), *this);
+    ts.traverse_entropy(start_no, stop_no, *calc.get(), *this);
   }
   else {
-    ts.traverse(start, stop,  *this);
+    ts.traverse(start_no, stop_no,  *this);
   }
 }
 
 Worker::~Worker() {}
 Worker::Worker() {}
 
-Worker::Worker(int rank,
-               int ranks,
-               long limit,
-               TupleSpace const& ts,
+Worker::Worker(TupleSpace const& ts,
+               count_t start,
+               count_t stop,
                entropy_calc_ptr calc,
                std::vector<output_stream_ptr> out_streams,
                measure_ptr measure)
   : ts(ts)
-  , rank(rank)
-  , ranks(ranks)
-  , limit(limit)
+  , start_no(start)
+  , stop_no(stop)
   , calc(calc)
   , out_streams(out_streams)
   , measure(measure)

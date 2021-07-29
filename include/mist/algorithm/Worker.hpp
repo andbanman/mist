@@ -39,10 +39,9 @@ public:
    * @param out_streams Collection OutputStream pointers to send results
    * @param measure The it::Measure to calculate the results
    */
-  Worker(int rank,
-         int ranks,
-         long limit,
-         TupleSpace const& ts,
+  Worker(TupleSpace const& ts,
+         count_t start,
+         count_t stop,
          entropy_calc_ptr calc,
          std::vector<output_stream_ptr> out_streams,
          measure_ptr measure);
@@ -62,13 +61,8 @@ private:
   entropy_calc_ptr calc;
   std::vector<output_stream_ptr> out_streams;
   measure_ptr measure;
-  int rank;
-  int ranks;  // total number of ranks
-  long limit; // maximum number of tuples to process
-
-  void search_d1(long start, long stop, bool full);
-  void search_d2(long start, long stop, bool full);
-  void search_d3(long start, long stop, bool full);
+  count_t start_no;
+  count_t stop_no;
 };
 
 class WorkerException : public std::exception
