@@ -446,28 +446,44 @@ Search::init_caches()
   int ncache = (pimpl->tuple_size > 2) ? 2 : 1;
   auto variables = pimpl->data->variables();
 
+  // Even very large data does not take a seriously long time to populate
+  // caches, especially compared to the the full runtime. Thus we can get away
+  // with not checking if caches can be reused (hard with the no-copy data
+  // model). So remake the caches every time.
   pimpl->shared_caches.resize(ncache);
+  pimpl->shared_caches.assign(ncache, nullptr);
+
+  auto mem_budget = pimpl->cache_size_bytes;
 
   // By taking each dimension on its own we prevent any two threads from
-  // seeing the same tuple. Only safe for pre-sized caches, e.g. Flat, that
-  // are thread-safe for unique puts. For other cache types use a single
-  // worker.
-
-  // fill caches
-  for (int cc = 0; cc < ncache; cc++) {
-    int d = cc + 1;
+  // seeing the same tuple. Cache must be a pre-allocated container, hence
+  // thread-safe writes to different elements.
+  if (ncache >= 1) {
     try {
-      if (pimpl->cache_size_bytes) {
-        pimpl->shared_caches[cc] =
-          cache_ptr(new cache::Flat(nvar, d, pimpl->cache_size_bytes));
-      } else {
-        pimpl->shared_caches[cc] =
-          cache_ptr(new cache::Flat(nvar, d));
-      }
+      pimpl->shared_caches[0] =
+        cache_ptr(new cache::Flat1D(nvar));
     } catch (std::bad_alloc const& ba) {
       // cannot allocate this cache, stop the cache init
-      break;
+      return;
     }
+  }
+  if (ncache >= 2) {
+    try {
+      //TODO take from memory budget
+      pimpl->shared_caches[1] =
+        cache_ptr(new cache::Flat2D(nvar));
+    } catch (std::bad_alloc const& ba) {
+      // TODO try a smaller size?
+    }
+  }
+
+  // TODO higher dimensions
+
+  for (int cc = 0; cc < ncache; cc++) {
+    if (!pimpl->shared_caches[cc]) {
+      continue;
+    }
+    int d = cc + 1;
     std::vector<algorithm::Worker> workers(ranks);
     std::vector<std::thread> threads(ranks - 1);
     std::vector<cache_ptr> caches = { pimpl->shared_caches[cc] };
