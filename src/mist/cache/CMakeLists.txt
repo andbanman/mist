@@ -2,6 +2,7 @@ set(namespace "cache")
 set(cache_objects "")
 
 add_namespace_object(Flat)
+add_namespace_object(Flat1D)
 #add_namespace_object(Map)
 #add_namespace_object(MRU)
 #add_namespace_object(SmallFiles)
