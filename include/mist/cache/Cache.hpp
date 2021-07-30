@@ -6,15 +6,16 @@
 #include <utility>
 
 #include "../Variable.hpp"
+#include "it/Entropy.hpp"
 
 namespace mist {
 namespace cache {
 
 using K = Variable::indexes;
+using V = it::entropy_type;
 
 /** Cache interface
  */
-template<class V>
 class Cache
 {
 public:
@@ -29,16 +30,14 @@ public:
   // virtual V get(K const&) = 0;
 
   /** Insert value at key.
-   * An element will be removed if the table size would
-   * be exceeded and returned for handling.
    */
-  virtual std::pair<K, V> put(K const&, V const&) = 0;
+  virtual void put(K const&, V const&) = 0;
 
   /** Return value at key.
    *
    * @except out_of_range Key not in table
    */
-  virtual std::shared_ptr<V> get(K const&) = 0;
+  virtual V get(K const&) = 0;
 
   /** Number of entries in table
    */

@@ -5,6 +5,6 @@
 
 // implementations
 #include "cache/Flat.hpp"
-#include "cache/MRU.hpp"
-#include "cache/Map.hpp"
-#include "cache/SmallFiles.hpp"
+//#include "cache/MRU.hpp"
+//#include "cache/Map.hpp"
+//#include "cache/SmallFiles.hpp"

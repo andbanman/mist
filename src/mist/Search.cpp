@@ -459,10 +459,10 @@ Search::init_caches()
     try {
       if (pimpl->cache_size_bytes) {
         pimpl->shared_caches[cc] =
-          cache_ptr(new cache::Flat<it::entropy_type>(nvar, d, pimpl->cache_size_bytes));
+          cache_ptr(new cache::Flat(nvar, d, pimpl->cache_size_bytes));
       } else {
         pimpl->shared_caches[cc] =
-          cache_ptr(new cache::Flat<it::entropy_type>(nvar, d));
+          cache_ptr(new cache::Flat(nvar, d));
       }
     } catch (std::bad_alloc const& ba) {
       // cannot allocate this cache, stop the cache init

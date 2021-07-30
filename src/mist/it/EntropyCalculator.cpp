@@ -73,7 +73,7 @@ EntropyCalculator::entropy_cache(tuple_t const& tuple, cache_ptr_type& cache)
 {
   if (cache) {
     try {
-      return *cache->get(tuple);
+      return cache->get(tuple);
     } catch (std::out_of_range& e) {
       counter->count(*vars, tuple, dist);
       dist.normalize();

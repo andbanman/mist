@@ -13,8 +13,7 @@ namespace it {
 class EntropyCalculator
 {
 public:
-  using cache_type = cache::Cache<entropy_type>;
-  using cache_ptr_type = std::shared_ptr<cache_type>;
+  using cache_ptr_type = std::shared_ptr<cache::Cache>;
   using counter_type = Counter;
   using counter_ptr_type = std::shared_ptr<counter_type>;
   using tuple_t = Variable::indexes;
