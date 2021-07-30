@@ -1,6 +1,6 @@
 #include "it/Entropy.hpp"
+#include "binomial.hpp"
 #include <algorithm>
-#include <cmath>
 #include <map>
 #include <set>
 
@@ -206,19 +206,6 @@ TupleSpace::pyAddVariableGroupTuple(p::list const& list)
   addVariableGroupTuple(groups);
 }
 #endif
-
-constexpr inline
-TupleSpace::count_t binomial(TupleSpace::count_t n,
-                             TupleSpace::count_t k) noexcept
-{
-  return
-    (        k> n  )? 0 :        // out of range
-    (k==0 || k==n  )? 1 :        // edge
-    (k==1 || k==n-1)? n :        // first
-    (     k+k < n  )?            // recursive:
-    (binomial(n-1,k-1) * n)/k :  //  path to k=1   is faster
-    (binomial(n-1,k) * n)/(n-k); //  path to k=n-1 is faster
-}
 
 static std::vector<std::size_t>
 groupSizes(std::vector<TupleSpace::tuple_t> const& groups)
