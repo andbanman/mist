@@ -17,14 +17,21 @@ populateBitsetVariable(Variable const& v, BitsetVariable& b)
   int bins = v.bins();
   int size = v.size();
 
-  b = BitsetVariable(bins);
-
-  for (int ii = 0; ii < bins; ii++) {
+  // Initialize bitsets
+  // last bitset is non-missing mask
+  b = BitsetVariable(bins + 1);
+  for (int ii = 0; ii < bins+1; ii++) {
     b[ii] = Bitset(size);
   }
+  b.back().set(1);
 
   for (int jj = 0; jj < size; jj++) {
-    b[v[jj]][jj] = 1;
+    int val = v[jj];
+    if (VARIABLE_MISSING_VAL(val)) {
+      b.back()[jj] = 0;
+    } else {
+      b[v[jj]][jj] = 1;
+    }
   }
 }
 
@@ -36,7 +43,14 @@ bitsetCount(BitsetTable const& bitsetTable,
 {
   int size = vars.size();
 
-  Bitset result = bitsetTable[vars[indexes[0]].index()][vals[0]];
+  // initialize to non-missing mask
+  Bitset result = bitsetTable[vars[indexes[0]].index()].back();
+  for (int ii = 1; ii < size; ii++) {
+    result &= bitsetTable[vars[indexes[ii]].index()].back();
+  }
+
+  // build out distribution
+  result &= bitsetTable[vars[indexes[0]].index()][vals[0]];
   for (int ii = 1; ii < size; ii++) {
     result &= bitsetTable[vars[indexes[ii]].index()][vals[ii]];
   }
