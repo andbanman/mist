@@ -19,6 +19,7 @@
 #include "it/Entropy.hpp"
 #include "it/EntropyCalculator.hpp"
 #include "it/SymmetricDelta.hpp"
+#include "it/VectorCounter.hpp"
 
 using namespace mist;
 
@@ -30,6 +31,7 @@ using flat_stream_ptr = std::shared_ptr<io::FlatOutputStream>;
 using measure_ptr = std::shared_ptr<it::Measure>;
 using cache_ptr = it::EntropyCalculator::cache_ptr_type;
 using entropy_calc_ptr = std::unique_ptr<it::EntropyCalculator>;
+using counter_ptr = std::shared_ptr<it::Counter>;
 using tuple_space_ptr = std::shared_ptr<algorithm::TupleSpace>;
 using variables_ptr = std::shared_ptr<Variable::tuple>;
 
@@ -58,6 +60,7 @@ struct Search::impl
   data_ptr data;
   file_stream_ptr file_output;
   measure_ptr measure;
+  counter_ptr counter;
   std::string measure_str;
   std::vector<cache_ptr> shared_caches;
   std::vector<flat_stream_ptr> mem_outputs;
@@ -398,27 +401,26 @@ Search::printCacheStats()
   }
 }
 
-entropy_calc_ptr
-makeEntropyCalc(probability_algorithms const& type,
-                variables_ptr const& variables,
-                std::vector<cache_ptr>& caches)
+static counter_ptr
+make_counter(probability_algorithms const& type,
+             variables_ptr const& variables)
 {
-  it::EntropyCalculator* calc = 0;
   switch (type) {
     case probability_algorithms::vector:
-      calc = new it::EntropyCalculator(
-        variables,
-        std::shared_ptr<it::VectorCounter>(new it::VectorCounter()),
-        caches);
-      break;
+      return counter_ptr(new it::VectorCounter());
     case probability_algorithms::bitset:
-      calc = new it::EntropyCalculator(
-        variables,
-        std::shared_ptr<it::BitsetCounter>(new it::BitsetCounter(*variables)),
-        caches);
-      break;
+      return counter_ptr(new it::BitsetCounter(*variables));
+    default:
+      throw SearchException("make_counter", "Invalid probabilty algorithm");
   }
-  return entropy_calc_ptr(calc);
+}
+
+static entropy_calc_ptr
+make_calculator(counter_ptr const& counter,
+                std::vector<cache_ptr> const& caches,
+                variables_ptr const& variables)
+{
+  return entropy_calc_ptr(new it::EntropyCalculator(variables, counter, caches));
 }
 
 using count_t = algorithm::TupleSpace::count_t;
@@ -491,8 +493,7 @@ Search::init_caches()
     auto tuple_count = ts->count_tuples();
     auto rank_bounds = divide_tuple_space(ranks, tuple_count);
     for (int ii = 0; ii < ranks; ii++) {
-      auto calc =
-        makeEntropyCalc(pimpl->probability_algorithm, variables, caches);
+      auto calc = make_calculator(pimpl->counter, caches, variables);
       workers[ii] = algorithm::Worker(
         ts, rank_bounds[ii][0], rank_bounds[ii][1], calc, {}, entropy_measure);
     }
@@ -609,6 +610,10 @@ Search::start()
     pimpl->tuple_space = tuple_space_ptr(new algorithm::TupleSpace(nvar, tuple_size));
   }
 
+  // Create the probabilty distribution counter. The counter may recase the
+  // data so it needs to have enough memory
+  pimpl->counter = make_counter(pimpl->probability_algorithm, variables);
+
   // Divide the tuple space into chunks for each rank
   auto max_tuples = pimpl->tuple_space->count_tuples();
   auto tuple_count = (pimpl->tuple_limit) ? pimpl->tuple_limit : max_tuples;
@@ -644,8 +649,7 @@ Search::start()
   // Create Workers
   for (int ii = 0; ii < ranks; ii++) {
     // each worker gets own calc, with own buffer probability distribution
-    auto calc = makeEntropyCalc(
-      pimpl->probability_algorithm, variables, pimpl->shared_caches);
+    auto calc = make_calculator(pimpl->counter, pimpl->shared_caches, variables);
     // Configure output streams. Each worker gets separate output streams
     // to avoid collision (single stream coordinated by mutex is too slow).
     std::vector<output_stream_ptr> out_streams;
