@@ -3,6 +3,7 @@
 #include "iostream"
 
 #include "io/FileOutputStream.hpp"
+#include "it/Entropy.hpp"
 #include <exception>
 
 using namespace mist;
@@ -34,13 +35,13 @@ FileOutputStream::init()
 // snprintf with pre-allocated buffer faster than sstream and
 // boost::lexical_cast
 inline std::string
-double_to_string_fast(FileOutputStream::buffer_type buff, double v)
+double_to_string_fast(FileOutputStream::buffer_type &buff, double v)
 {
   std::string ret; // declare return to encourage RVO
   snprintf(buff.data(), DOUBLE_BUFFER_MAX_SIZE - 1, "%g", v);
   buff.data()[DOUBLE_BUFFER_MAX_SIZE - 1] = '\0';
   ret = buff.data();
-  return ret;
+  return ret; // TODO Malloc thrashing here
 }
 
 void
@@ -168,7 +169,7 @@ FileOutputStream::~FileOutputStream()
 }
 
 void
-FileOutputStream::push(tuple_type const& tuple, result_type const& result)
+FileOutputStream::push(std::size_t tuple_no, tuple_type const& tuple, result_type const& result)
 {
   std::string ss = "";
   for (auto t : tuple) {
@@ -178,6 +179,17 @@ FileOutputStream::push(tuple_type const& tuple, result_type const& result)
     ss += double_to_string_fast(double_strbuf, *it) + ",";
   }
   ss += double_to_string_fast(double_strbuf, result.back()) + "\n";
+  this->buffered_write(ss);
+}
+
+void
+FileOutputStream::push(std::size_t tuple_no, tuple_type const& tuple, it::entropy_type result)
+{
+  std::string ss = "";
+  for (auto t : tuple) {
+    ss += std::to_string(t) + ",";
+  }
+  ss += double_to_string_fast(double_strbuf, result) + "\n";
   this->buffered_write(ss);
 }
 

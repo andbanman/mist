@@ -4,8 +4,11 @@
 
 #include "algorithm/TupleSpace.hpp"
 #include "io/OutputStream.hpp"
+#include "it/Distribution.hpp"
+#include "it/Entropy.hpp"
 #include "it/EntropyCalculator.hpp"
 #include "it/Measure.hpp"
+#include "Variable.hpp"
 
 namespace mist {
 namespace algorithm {
@@ -16,12 +19,17 @@ namespace algorithm {
  * of the search space depending on the rank parameters. It is common for each
  * computing thread on the system to have a unique Worker instance.
  */
-class Worker
+class Worker : public TupleSpaceTraverser
 {
 public:
-  using entropy_calc_ptr = std::shared_ptr<it::EntropyCalculator>;
+  using tuple_space_ptr = std::shared_ptr<algorithm::TupleSpace>;
+  using entropy_calc_ptr = std::unique_ptr<it::EntropyCalculator>;
   using output_stream_ptr = std::shared_ptr<io::OutputStream>;
   using measure_ptr = std::shared_ptr<it::Measure>;
+  using tuple_t = Variable::indexes;
+  using count_t = TupleSpace::count_t;
+  using result_t = it::entropy_type;
+  using atomic_count_t = std::atomic<count_t>;
 
   // Typedefs for convenience expressing the algorithm
 
@@ -29,20 +37,35 @@ public:
   Worker();
   /** Construct and configure a Worker instance.
    *
-   * @param rank Zero-indexed rank number [0, ranks]
-   * @param ranks Total number of Workers participating in the search
-   * @param limit Upper limit on number of tuples to processes by all Workers
    * @param ts TupleSpace that defines the tuple search space
+   * @param start Start processing at start tuple number
+   * @param stop Stop processing when stop tuple number is reached
+   * @param cutoff Discard all tuples from output with a measure less than cutoff
    * @param out_streams Collection OutputStream pointers to send results
    * @param measure The it::Measure to calculate the results
    */
-  Worker(int rank,
-         int ranks,
-         long limit,
-         TupleSpace const& ts,
-         entropy_calc_ptr calc,
-         std::vector<output_stream_ptr> out_streams,
-         measure_ptr measure);
+  Worker(tuple_space_ptr const& ts,
+         count_t start,
+         count_t stop,
+         result_t cutoff,
+         entropy_calc_ptr & calc,
+         std::vector<output_stream_ptr> const& out_streams,
+         measure_ptr const& measure);
+
+  /** Construct and configure a Worker instance.
+   *
+   * Cutoff is not used in the this instance.
+   */
+  Worker(tuple_space_ptr const& ts,
+         count_t start,
+         count_t stop,
+         entropy_calc_ptr & calc,
+         std::vector<output_stream_ptr>  const& out_streams,
+         measure_ptr const& measure);
+
+  // Explicit copy constructors
+  Worker(Worker const& other);
+  Worker& operator=(Worker const& other);
 
   /** Start the Worker search space execution. Returns when all tuples in the
    * search space have been processed.
@@ -51,20 +74,23 @@ public:
 
   bool output_all = false;
 
+  void process_tuple(count_t tuple_no, tuple_t const& tuple);
+  void process_tuple_entropy(count_t tuple_no, tuple_t const& tuple, it::Entropy const& e);
+
+  count_t tuple_count() const;
+
 private:
-  TupleSpace ts;
+  tuple_space_ptr ts;
   entropy_calc_ptr calc;
   std::vector<output_stream_ptr> out_streams;
   measure_ptr measure;
-  int rank;
-  int ranks;  // total number of ranks
-  long limit; // maximum number of tuples to process
-
-  void processTuple(std::vector<int> const& tuple);
-  void processTuple(std::vector<int> const& tuple, it::Entropy const& e);
-  void search_d1(long start, long stop, bool full);
-  void search_d2(long start, long stop, bool full);
-  void search_d3(long start, long stop, bool full);
+  count_t start_no;
+  count_t stop_no;
+  result_t cutoff;
+  // keep a result buffered to aviod malloc/free thrashing
+  it::Measure::result_type result;
+  // running count of seen tuples
+  std::unique_ptr<atomic_count_t> tuples;
 };
 
 class WorkerException : public std::exception

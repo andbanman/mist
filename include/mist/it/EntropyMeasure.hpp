@@ -17,10 +17,18 @@ public:
 
   result_type compute(EntropyCalculator& ecalc,
                       Variable::indexes const& tuple) const;
+  void compute(EntropyCalculator& ecalc,
+               Variable::indexes const& tuple,
+               result_type& result) const;
   result_type compute(EntropyCalculator& ecalc,
                       Variable::indexes const& tuple,
                       Entropy const& e) const;
+  void compute(EntropyCalculator& ecalc,
+                      Variable::indexes const& tuple,
+                      Entropy const& e,
+                      result_type& result) const;
   std::string header(int d, bool full_output) const;
+  std::vector<std::string> const& names(int d, bool full_output) const;
 
   enum struct sub_calc_1d : int
   {

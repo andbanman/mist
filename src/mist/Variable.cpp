@@ -3,7 +3,7 @@
 using namespace mist;
 
 // inherit constructors
-// using std::shared_ptr<data_type>::shared_ptr;
+// using std::shared_ptr<data_t>::shared_ptr;
 Variable::Variable(){};
 
 //!
@@ -78,7 +78,7 @@ Variable::missing(std::size_t pos) const
 };
 
 bool
-Variable::missingVal(Variable::data_type const val)
+Variable::missingVal(Variable::data_t const val)
 {
   return VARIABLE_MISSING_VAL(val);
 }
@@ -86,11 +86,11 @@ Variable::missingVal(Variable::data_type const val)
 //!
 //! Access data value at position.
 //!
-Variable::data_type& Variable::operator[](std::size_t pos)
+Variable::data_t& Variable::operator[](std::size_t pos)
 {
   return this->data.get()[pos];
 };
-Variable::data_type const& Variable::operator[](std::size_t pos) const
+Variable::data_t const& Variable::operator[](std::size_t pos) const
 {
   return this->data.get()[pos];
 };
@@ -99,7 +99,7 @@ Variable::data_type const& Variable::operator[](std::size_t pos) const
 //! Access data value at position.
 //!
 //! @exception out_of_range
-Variable::data_type&
+Variable::data_t&
 Variable::at(std::size_t const pos)
 {
   if (pos >= _size) {
@@ -107,7 +107,7 @@ Variable::at(std::size_t const pos)
   }
   return this->data.get()[pos];
 };
-Variable::data_type const&
+Variable::data_t const&
 Variable::at(std::size_t const pos) const
 {
   if (pos >= _size) {
@@ -127,7 +127,7 @@ Variable::deepCopy()
 {
   // TODO test for leaks
   // deep copy the data
-  data_ptr data(new Variable::data_type[this->_size]);
+  data_ptr data(new Variable::data_t[this->_size]);
   for (std::size_t ii = 0; ii < this->_size; ii++) {
     data.get()[ii] = this->data.get()[ii];
   }

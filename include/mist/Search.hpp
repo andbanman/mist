@@ -2,6 +2,7 @@
 
 #include "io/DataMatrix.hpp"
 #include "io/MapOutputStream.hpp"
+#include "it/Entropy.hpp"
 #include <memory>
 #include <stdexcept>
 
@@ -63,6 +64,14 @@ public:
    */
   void set_measure(std::string const& measure);
   std::string get_measure();
+
+  /** Set the minimum IT Measure value to keep in results.
+   *
+   * This option is most useful for dealing with very large TupleSpaces, the
+   * results for which cannot be stored in memory or on disk.
+   */
+  void set_cutoff(it::entropy_type cutoff);
+  it::entropy_type get_cutoff();
 
   /** Set the algorithm for generating probability distributions.
    *
@@ -137,6 +146,15 @@ public:
   void set_tuple_limit(long limit);
   long get_tuple_limit();
 
+  /** Toggle whether to write program progress to stderr.
+   *
+   * When true, an extra thread will be made to watch progress through the
+   * TupleSpace. This option is especially useful for large searches to
+   * estimate how long the run will take.
+   */
+  void set_show_progress(bool);
+  bool get_show_progress();
+
   /** Include all subcalculations in the output
    */
   void set_output_intermediate(bool);
@@ -197,7 +215,7 @@ public:
 
   /** Return a copy of all results
    */
-  io::MapOutputStream::map_type get_results();
+  std::vector<it::entropy_type> const& get_results();
 
   /** Print cache statistics for each cache in each thread to stdout.
    */

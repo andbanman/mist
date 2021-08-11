@@ -17,14 +17,21 @@ populateBitsetVariable(Variable const& v, BitsetVariable& b)
   int bins = v.bins();
   int size = v.size();
 
-  b = BitsetVariable(bins);
-
-  for (int ii = 0; ii < bins; ii++) {
+  // Initialize bitsets
+  // last bitset is non-missing mask
+  b = BitsetVariable(bins + 1);
+  for (int ii = 0; ii < bins+1; ii++) {
     b[ii] = Bitset(size);
   }
+  b.back().set(1);
 
   for (int jj = 0; jj < size; jj++) {
-    b[v[jj]][jj] = 1;
+    int val = v[jj];
+    if (VARIABLE_MISSING_VAL(val)) {
+      b.back()[jj] = 0;
+    } else {
+      b[v[jj]][jj] = 1;
+    }
   }
 }
 
@@ -36,7 +43,14 @@ bitsetCount(BitsetTable const& bitsetTable,
 {
   int size = vars.size();
 
-  Bitset result = bitsetTable[vars[indexes[0]].index()][vals[0]];
+  // initialize to non-missing mask
+  Bitset result = bitsetTable[vars[indexes[0]].index()].back();
+  for (int ii = 1; ii < size; ii++) {
+    result &= bitsetTable[vars[indexes[ii]].index()].back();
+  }
+
+  // build out distribution
+  result &= bitsetTable[vars[indexes[0]].index()][vals[0]];
   for (int ii = 1; ii < size; ii++) {
     result &= bitsetTable[vars[indexes[ii]].index()][vals[ii]];
   }
@@ -140,13 +154,14 @@ void static count3d(BitsetTable const& bitsetTable,
   }
 }
 
-Distribution
+void
 BitsetCounter::count(Variable::tuple const& vars,
-                     Variable::indexes const& indexes)
+                     Variable::indexes const& indexes,
+                     Distribution& dist)
 {
   int nvars = indexes.size();
 
-  Distribution dist(vars, indexes);
+  dist.initialize(vars, indexes);
 
   switch (nvars) {
     // TODO: Weird, for some reason the unrolled are slower???
@@ -164,31 +179,27 @@ BitsetCounter::count(Variable::tuple const& vars,
       recursiveBitsetCount(this->bits, vars, indexes, dist, vals, 0);
       break;
   }
-
-  return dist;
 }
 
 //! @exception out_of_range Variable index out of range of table whose size set
 //! in constructor
-Distribution
-BitsetCounter::count(Variable::tuple const& vars)
+void
+BitsetCounter::count(Variable::tuple const& vars, Distribution& dist)
 {
   auto nvars = vars.size();
   Variable::indexes indexes(nvars);
   for (int ii = 0; ii < nvars; ii++) {
     indexes[ii] = ii;
   }
-  Distribution dist = this->count(vars, indexes);
-  return dist;
+  this->count(vars, indexes, dist);
 }
 
-Distribution
-BitsetCounter::count(Variable const& var)
+void
+BitsetCounter::count(Variable const& var, Distribution& dist)
 {
   Variable::tuple vars(1);
   vars[0] = var;
-  Distribution dist = this->count(vars, { 0 });
-  return dist;
+  this->count(vars, { 0 }, dist);
 }
 
 BitsetCounter::BitsetCounter(Variable::tuple const& all_vars)

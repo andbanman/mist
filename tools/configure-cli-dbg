@@ -1,0 +1,11 @@
+#!/bin/bash
+cmake \
+ -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+ -DBuildStatic:BOOL=ON \
+ -DInstallExtern:BOOL=OFF \
+ -DBuildPython:BOOL=OFF \
+ -DBuildTest:BOOL=ON \
+ -DBuildDoc:BOOL=OFF \
+ -DBuildPyPi:BOOL=OFF \
+ -DCMAKE_BUILD_TYPE=Debug \
+"$(dirname "$0")/../"

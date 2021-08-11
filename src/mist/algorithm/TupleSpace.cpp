@@ -1,5 +1,6 @@
+#include "it/Entropy.hpp"
+#include "binomial.hpp"
 #include <algorithm>
-#include <cmath>
 #include <map>
 #include <set>
 
@@ -8,6 +9,7 @@
 #endif
 
 #include "algorithm/TupleSpace.hpp"
+#include "it/EntropyCalculator.hpp"
 
 using namespace mist;
 using namespace mist::algorithm;
@@ -18,17 +20,18 @@ TupleSpace::~TupleSpace(){};
 
 // default space for N variables in tuples size d
 TupleSpace::TupleSpace(int N, int d)
+  : tuple_size(d)
 {
   if (N == 0 || d == 0) {
     throw TupleSpaceException("TupleSpace",
                               "Number of variables and dimension cannot be zero.");
   }
-  tuple_type vars(N);
+  tuple_t vars(N);
   for (int ii = 0; ii < N; ii++) {
     vars[ii] = ii;
   }
   this->addVariableGroup("default", vars);
-  tuple_type groupTuple(d, 0);
+  tuple_t groupTuple(d, 0);
   this->addVariableGroupTuple(groupTuple);
 };
 
@@ -53,7 +56,7 @@ TupleSpace::tupleSize() const
 void
 TupleSpace::addVariableGroupTuple(std::vector<std::string> const& groupNames)
 {
-  TupleSpace::tuple_type groupIndexes;
+  TupleSpace::tuple_t groupIndexes;
   for (auto& name : groupNames) {
     try {
       groupIndexes.push_back(variableGroupNames[name]);
@@ -66,7 +69,7 @@ TupleSpace::addVariableGroupTuple(std::vector<std::string> const& groupNames)
 }
 
 void
-TupleSpace::addVariableGroupTuple(TupleSpace::tuple_type const& groupIndexes)
+TupleSpace::addVariableGroupTuple(TupleSpace::tuple_t const& groupIndexes)
 {
   // validate tuple size
   if (!tuple_size) {
@@ -89,10 +92,10 @@ TupleSpace::addVariableGroupTuple(TupleSpace::tuple_type const& groupIndexes)
 
 int
 TupleSpace::addVariableGroup(std::string const& name,
-                             TupleSpace::tuple_type const& vars)
+                             TupleSpace::tuple_t const& vars)
 {
   std::set<int> unique_vars;
-  tuple_type group;
+  tuple_t group;
   for (auto var : vars) {
     // ignore duplicates within variable group
     if (unique_vars.find(var) == unique_vars.end()) {
@@ -117,7 +120,7 @@ TupleSpace::addVariableGroup(std::string const& name,
   return index;
 }
 
-TupleSpace::tuple_type const&
+TupleSpace::tuple_t const&
 TupleSpace::getVariableGroup(int index) const
 {
   try {
@@ -129,7 +132,7 @@ TupleSpace::getVariableGroup(int index) const
   }
 }
 
-TupleSpace::tuple_type const&
+TupleSpace::tuple_t const&
 TupleSpace::getVariableGroup(std::string const& name) const
 {
   try {
@@ -146,13 +149,13 @@ TupleSpace::getVariableGroupSizes() const
     return variableGroupSizes;
 }
 
-std::vector<TupleSpace::tuple_type> const&
+std::vector<TupleSpace::tuple_t> const&
 TupleSpace::getVariableGroups() const
 {
   return variableGroups;
 }
 
-std::vector<TupleSpace::tuple_type> const&
+std::vector<TupleSpace::tuple_t> const&
 TupleSpace::getVariableGroupTuples() const
 {
   return variableGroupTuples;
@@ -164,7 +167,7 @@ TupleSpace::pyAddVariableGroup(std::string const& name, p::list const& list)
 {
   int n = p::len(list);
   // copy list in
-  algorithm::TupleSpace::tuple_type vars(n);
+  algorithm::TupleSpace::tuple_t vars(n);
   for (int ii = 0; ii < n; ii++) {
     p::extract<int> var(list[ii]);
     if (var.check()) {
@@ -180,10 +183,10 @@ TupleSpace::pyAddVariableGroup(std::string const& name, p::list const& list)
 void
 TupleSpace::pyAddVariableGroupTuple(p::list const& list)
 {
-  int n = p::len(list);
-  algorithm::TupleSpace::tuple_type groups(n);
+  int n = p::len(list); // Doesn't give the right answer ...
+  algorithm::TupleSpace::tuple_t groups(n);
   for (int ii = 0; ii < n; ii++) {
-    p::extract<int> gint(list[ii]);
+    p::extract<int> gint(list[ii]); //TODO segaults
     p::extract<std::string> gname(list[ii]);
     if (gint.check()) {
       groups[ii] = p::extract<int>(list[ii]);
@@ -204,19 +207,8 @@ TupleSpace::pyAddVariableGroupTuple(p::list const& list)
 }
 #endif
 
-static unsigned long long
-binomial(long double n, long double r)
-{
-  if (n == 0 || r == 0 || n == r) {
-    return 1;
-  } else {
-    return (unsigned long long)(lroundl(n / (n - r) / r *
-                          expl(lgammal(n) - lgammal(n - r) - lgammal(r))));
-  }
-}
-
 static std::vector<std::size_t>
-groupSizes(std::vector<TupleSpace::tuple_type> const& groups)
+groupSizes(std::vector<TupleSpace::tuple_t> const& groups)
 {
   std::vector<std::size_t> group_sizes;
   for (auto& group : groups) {
@@ -225,27 +217,27 @@ groupSizes(std::vector<TupleSpace::tuple_type> const& groups)
   return group_sizes;
 }
 
-static TupleSpace::tuple_type
-groupAppearances(int d, TupleSpace::tuple_type const& group_tuple, int pos)
+static TupleSpace::tuple_t
+groupAppearances(int d, TupleSpace::tuple_t const& group_tuple, int pos)
 {
   // count group appearances following the current index
-  TupleSpace::tuple_type app(d, 0);
+  TupleSpace::tuple_t app(d, 0);
   for (int gg = pos; gg < group_tuple.size(); gg++) {
     app[group_tuple[gg]]++;
   }
   return app;
 }
 
-static TupleSpace::tuple_type
-groupAppearances(int d, TupleSpace::tuple_type const& group_tuple)
+static TupleSpace::tuple_t
+groupAppearances(int d, TupleSpace::tuple_t const& group_tuple)
 {
   return groupAppearances(d, group_tuple, 0);
 }
 
-unsigned long long
-TupleSpace::count_tuples_group_tuple(tuple_type const& group_tuple) const
+TupleSpace::count_t
+TupleSpace::count_tuples_group_tuple(tuple_t const& group_tuple) const
 {
-  long total = 1;
+  count_t total = 1;
   auto const& N = this->variableGroupSizes;
   auto d = N.size();
   auto a = groupAppearances(d, group_tuple);
@@ -255,10 +247,10 @@ TupleSpace::count_tuples_group_tuple(tuple_type const& group_tuple) const
   return total;
 }
 
-unsigned long long
+TupleSpace::count_t
 TupleSpace::count_tuples() const
 {
-  long total = 0;
+  count_t total = 0;
   for (auto const& group_tuple : this->variableGroupTuples) {
     total += count_tuples_group_tuple(group_tuple);
   }
@@ -267,12 +259,12 @@ TupleSpace::count_tuples() const
 
 // Fast-forward to the group containig the tuple at the target position.
 static int
-find_group(long* count, long target, TupleSpace const& ts)
+find_group(TupleSpace::count_t* count, TupleSpace::count_t target, TupleSpace const& ts)
 {
   auto const& group_tuples = ts.getVariableGroupTuples();
   int gg = 0;
   for (auto const& group_tuple : group_tuples) {
-    long skip = ts.count_tuples_group_tuple(group_tuple);
+    TupleSpace::count_t skip = ts.count_tuples_group_tuple(group_tuple);
     if ((skip + *count) > target) {
       break;
     }
@@ -291,26 +283,26 @@ find_group(long* count, long target, TupleSpace const& ts)
 //      find_index(..., pos=2, ...) returns 8.
 //
 static int
-find_index(TupleSpace::tuple_type const& group_tuple,
+find_index(TupleSpace::tuple_t const& group_tuple,
            int pos,
-           long* count,
-           long target,
+           TupleSpace::count_t* count,
+           TupleSpace::count_t target,
            std::vector<std::size_t> const& N,
-           TupleSpace::tuple_type& starts)
+           TupleSpace::tuple_t& starts)
 {
-  int ii = 0;                // index
-  int gi = group_tuple[pos]; // group corresponding to index
+  unsigned ii = 0;                // index
+  unsigned gi = group_tuple[pos]; // group corresponding to index
   auto app = groupAppearances(N.size(), group_tuple, pos + 1);
 
   for (ii = starts[gi]; ii < N[gi]; ii++) {
     starts[gi] = ii + 1;
     // count the number of tuples skipped over by incrementing index
     // for last index skip = 1 (could be optimized with a special case)
-    long skip = 1;
-    for (int gg = 0; gg < N.size(); gg++) {
+    TupleSpace::count_t skip = 1;
+    for (unsigned gg = 0; gg < N.size(); gg++) {
       // binomial combination reduces to linear when appearances == 1
-      long f = 1;
-      for (int kk = 0; kk < app[gg]; kk++) {
+      TupleSpace::count_t f = 1;
+      for (unsigned kk = 0; kk < app[gg]; kk++) {
         skip = skip * (N[gg] - starts[gg] - kk);
         f *= (kk + 1);
       }
@@ -327,28 +319,332 @@ find_index(TupleSpace::tuple_type const& group_tuple,
   return ii;
 }
 
-
-TupleSpace::tuple_type
-TupleSpace::find_tuple(long target) const
+TupleSpace::tuple_t
+TupleSpace::find_tuple(count_t target) const
 {
   // The fast-forward algorithm maintains a skipped tuple count so that when
   // the count equals the target count we have found the target tuple.
-  long count = 0;
+  count_t count = 0;
 
   auto const& N = this->variableGroupSizes;
   auto const& group_tuples = this->variableGroupTuples;
 
   // scan ahead to the group tuple that generates the target tuple
-  int gg = find_group(&count, target, *this);
+  unsigned gg = find_group(&count, target, *this);
   auto tuple_size = group_tuples[gg].size();
-  std::vector<int> ret(tuple_size + 1);
+  tuple_t ret(tuple_size + 1);
   ret[0] = gg;
 
   // scan to the target tuple
-  tuple_type starts(N.size(), 0);
-  for (int ii = 0; ii < tuple_size; ii++) {
+  tuple_t starts(N.size(), 0);
+  for (unsigned ii = 0; ii < tuple_size; ii++) {
     ret[ii + 1] = find_index(group_tuples[gg], ii, &count, target, N, starts);
   }
 
   return ret;
+}
+
+static void
+traverse_d1(TupleSpace const& ts, TupleSpace::count_t start, TupleSpace::count_t stop, TupleSpaceTraverser& traverser)
+{
+  auto const& groups = ts.getVariableGroups();
+  auto const& group_tuples = ts.getVariableGroupTuples();
+  auto const& N = ts.getVariableGroupSizes();
+  unsigned ngroups = groups.size();
+  unsigned ngtuples = group_tuples.size();
+
+  // tuple generation state
+  bool init = true;
+  bool work = true;
+  auto count = start;
+  TupleSpace::tuple_t starts(ngroups);
+  starts.assign(ngroups,0);
+
+  // fast-forward to starting group and tuple
+  auto ffw = ts.find_tuple(start);
+
+  // sub tuples on the stack
+  TupleSpace::tuple_t t0(1);
+
+  for (unsigned gg = ffw[0]; gg < ngtuples && work; gg++) {
+    unsigned gi = group_tuples[gg][0];
+
+    // loop through all tuples generated by this group_tuple
+    for (unsigned ii = (init) ? ffw[1] : starts[gi]; ii < N[gi] && work; ii++) {
+      starts[gi] = ii + 1;
+      auto vi = groups[gi][ii];
+      t0[0] = vi;
+      traverser.process_tuple(count, t0);
+      count++;
+      init = false;
+      work = count < stop;
+    }
+    starts[gi] = 0;
+  }
+}
+
+static void
+traverse_d2(TupleSpace const& ts, TupleSpace::count_t start, TupleSpace::count_t stop, TupleSpaceTraverser& traverser)
+{
+  auto const& groups = ts.getVariableGroups();
+  auto const& group_tuples = ts.getVariableGroupTuples();
+  auto const& N = ts.getVariableGroupSizes();
+  unsigned ngroups = groups.size();
+  unsigned ngtuples = group_tuples.size();
+
+  // tuple generation state
+  bool init = true;
+  bool work = true;
+  auto count = start;
+  TupleSpace::tuple_t starts(ngroups);
+  starts.assign(ngroups,0);
+
+  // fast-forward to starting group and tuple
+  auto ffw = ts.find_tuple(start);
+
+  // sub tuples on the stack
+  TupleSpace::tuple_t t01(2);
+
+  for (unsigned gg = ffw[0]; gg < ngtuples && work; gg++) {
+    unsigned gi = group_tuples[gg][0];
+    unsigned gj = group_tuples[gg][1];
+
+    // loop through all tuples generated by this group_tuple
+    for (unsigned ii = (init) ? ffw[1] : starts[gi]; ii < N[gi] && work; ii++) {
+      starts[gi] = ii + 1;
+      auto vi = groups[gi][ii];
+      t01[0] = vi;
+      for (unsigned jj = (init) ? ffw[2] : starts[gj]; jj < N[gj] && work; jj++) {
+        starts[gj] = jj + 1;
+        auto vj = groups[gj][jj];
+        t01[1] = vj;
+        traverser.process_tuple(count, t01);
+        count++;
+        init = false;
+        work = count < stop;
+      }
+      starts[gj] = 0;
+    }
+    starts[gi] = 0;
+  }
+}
+
+static void
+traverse_d2_entropy(TupleSpace const& ts, TupleSpace::count_t start, TupleSpace::count_t stop, TupleSpaceTraverser& traverser, it::EntropyCalculator & ecalc)
+{
+  auto const& groups = ts.getVariableGroups();
+  auto const& group_tuples = ts.getVariableGroupTuples();
+  auto const& N = ts.getVariableGroupSizes();
+  unsigned ngroups = groups.size();
+  unsigned ngtuples = group_tuples.size();
+
+  // tuple generation state
+  bool init = true;
+  bool work = true;
+  auto count = start;
+  TupleSpace::tuple_t starts(ngroups);
+  starts.assign(ngroups,0);
+  it::Entropy entropy((unsigned)it::d2::size);
+
+  // fast-forward to starting group and tuple
+  auto ffw = ts.find_tuple(start);
+
+  // sub tuples on the stack
+  TupleSpace::tuple_t t0(1);
+  TupleSpace::tuple_t t1(1);
+  TupleSpace::tuple_t t01(2);
+
+  for (unsigned gg = ffw[0]; gg < ngtuples && work; gg++) {
+    unsigned gi = group_tuples[gg][0];
+    unsigned gj = group_tuples[gg][1];
+
+    // loop through all tuples generated by this group_tuple
+    for (unsigned ii = (init) ? ffw[1] : starts[gi]; ii < N[gi] && work; ii++) {
+      starts[gi] = ii + 1;
+      auto vi = groups[gi][ii];
+      t0[0] = vi;
+      t01[0] = vi;
+      entropy[(unsigned)it::d2::e0] = ecalc.entropy(t0);
+      for (unsigned jj = (init) ? ffw[2] : starts[gj]; jj < N[gj] && work; jj++) {
+        starts[gj] = jj + 1;
+        auto vj = groups[gj][jj];
+        t1[0] = vj;
+        t01[1] = vj;
+        entropy[(unsigned)it::d2::e1]  = ecalc.entropy(t1);
+        entropy[(unsigned)it::d2::e01] = ecalc.entropy(t01);
+        traverser.process_tuple_entropy(count, t01, entropy);
+        count++;
+        init = false;
+        work = count < stop;
+      }
+      starts[gj] = 0;
+    }
+    starts[gi] = 0;
+  }
+}
+
+static void
+traverse_d3(TupleSpace const& ts, TupleSpace::count_t start, TupleSpace::count_t stop, TupleSpaceTraverser& traverser)
+{
+  auto const& groups = ts.getVariableGroups();
+  auto const& group_tuples = ts.getVariableGroupTuples();
+  auto const& N = ts.getVariableGroupSizes();
+  unsigned ngroups = groups.size();
+  unsigned ngtuples = group_tuples.size();
+
+  // tuple generation state
+  bool init = true;
+  bool work = true;
+  auto count = start;
+  TupleSpace::tuple_t starts(ngroups);
+  starts.assign(ngroups,0);
+
+  // fast-forward to starting group and tuple
+  auto ffw = ts.find_tuple(start);
+
+  // sub tuples on the stack
+  TupleSpace::tuple_t t012(3);
+
+  for (unsigned gg = ffw[0]; gg < ngtuples && work; gg++) {
+    unsigned gi = group_tuples[gg][0];
+    unsigned gj = group_tuples[gg][1];
+    unsigned gk = group_tuples[gg][2];
+
+    // loop through all tuples generated by this group_tuple
+    for (unsigned ii = (init) ? ffw[1] : starts[gi]; ii < N[gi] && work; ii++) {
+      starts[gi] = ii + 1;
+      auto vi = groups[gi][ii];
+      t012[0] = vi;
+      for (unsigned jj = (init) ? ffw[2] : starts[gj]; jj < N[gj] && work; jj++) {
+        starts[gj] = jj + 1;
+        auto vj = groups[gj][jj];
+        t012[1] = vj;
+        for (unsigned kk = (init) ? ffw[3] : starts[gk]; kk < N[gk] && work; kk++) {
+          starts[gk] = kk + 1;
+          auto vk = groups[gk][kk];
+          t012[2] = vk;
+          traverser.process_tuple(count, t012);
+          count++;
+          init = false;
+          work = count < stop;
+        }
+        starts[gk] = 0;
+      }
+      starts[gj] = 0;
+    }
+    starts[gi] = 0;
+  }
+}
+
+static void
+traverse_d3_entropy(TupleSpace const& ts, TupleSpace::count_t start, TupleSpace::count_t stop, TupleSpaceTraverser& traverser, it::EntropyCalculator & ecalc)
+{
+  auto const& groups = ts.getVariableGroups();
+  auto const& group_tuples = ts.getVariableGroupTuples();
+  auto const& N = ts.getVariableGroupSizes();
+  unsigned ngroups = groups.size();
+  unsigned ngtuples = group_tuples.size();
+
+  // tuple generation state
+  bool init = true;
+  bool work = true;
+  auto count = start;
+  TupleSpace::tuple_t starts(ngroups);
+  starts.assign(ngroups,0);
+  it::Entropy entropy((unsigned)it::d3::size);
+
+  // sub tuples on the stack
+  TupleSpace::tuple_t t0(1);
+  TupleSpace::tuple_t t1(1);
+  TupleSpace::tuple_t t2(1);
+  TupleSpace::tuple_t t01(2);
+  TupleSpace::tuple_t t02(2);
+  TupleSpace::tuple_t t12(2);
+  TupleSpace::tuple_t t012(3);
+
+  // fast-forward to starting group and tuple
+  auto ffw = ts.find_tuple(start);
+
+  for (unsigned gg = ffw[0]; gg < ngtuples && work; gg++) {
+    unsigned gi = group_tuples[gg][0];
+    unsigned gj = group_tuples[gg][1];
+    unsigned gk = group_tuples[gg][2];
+
+    // loop through all tuples generated by this group_tuple
+    for (unsigned ii = (init) ? ffw[1] : starts[gi]; ii < N[gi] && work; ii++) {
+      starts[gi] = ii + 1;
+      auto vi = groups[gi][ii];
+      t0[0] = vi;
+      t02[0] = vi;
+      t01[0] = vi;
+      t012[0] = vi;
+      entropy[(unsigned)it::d3::e0] = ecalc.entropy(t0);
+      for (unsigned jj = (init) ? ffw[2] : starts[gj]; jj < N[gj] && work; jj++) {
+        starts[gj] = jj + 1;
+        auto vj = groups[gj][jj];
+        t1[0] = vj;
+        t01[1] = vj;
+        t12[0] = vj;
+        t012[1] = vj;
+        entropy[(unsigned)it::d3::e1]  = ecalc.entropy(t1);
+        entropy[(unsigned)it::d3::e01] = ecalc.entropy(t01);
+        for (unsigned kk = (init) ? ffw[3] : starts[gk]; kk < N[gk] && work; kk++) {
+          starts[gk] = kk + 1;
+          auto vk = groups[gk][kk];
+          t2[0] = vk;
+          t02[1] = vk;
+          t12[1] = vk;
+          t012[2] = vk;
+          entropy[(unsigned)it::d3::e2]   = ecalc.entropy(t2);
+          entropy[(unsigned)it::d3::e02]  = ecalc.entropy(t02);
+          entropy[(unsigned)it::d3::e12]  = ecalc.entropy(t12);
+          entropy[(unsigned)it::d3::e012] = ecalc.entropy(t012);
+          traverser.process_tuple_entropy(count, t012, entropy);
+          count++;
+          init = false;
+          work = count < stop;
+        }
+        starts[gk] = 0;
+      }
+      starts[gj] = 0;
+    }
+    starts[gi] = 0;
+  }
+}
+
+void
+TupleSpace::traverse(TupleSpaceTraverser& traverser) const
+{
+  traverse(0, -1, traverser);
+}
+
+void
+TupleSpace::traverse_entropy(it::EntropyCalculator &ecalc, TupleSpaceTraverser& traverser) const
+{
+  traverse_entropy(0, -1, ecalc, traverser);
+}
+
+void
+TupleSpace::traverse(count_t start, count_t stop, TupleSpaceTraverser& traverser) const
+{
+  switch(tuple_size) {
+    case 1: traverse_d1(*this, start, stop, traverser); break;
+    case 2: traverse_d2(*this, start, stop, traverser); break;
+    case 3: traverse_d3(*this, start, stop, traverser); break;
+    default:
+      throw TupleSpaceException("traverse", "Tuple size unsupported.");
+  }
+}
+
+void
+TupleSpace::traverse_entropy(count_t start, count_t stop, it::EntropyCalculator &ecalc, TupleSpaceTraverser& traverser) const
+{
+  switch(tuple_size) {
+    case 1:
+      throw TupleSpaceException("traverse_entropy", "Tuple size 1 unsupported.");
+    case 2: traverse_d2_entropy(*this, start, stop, traverser, ecalc); break;
+    case 3: traverse_d3_entropy(*this, start, stop, traverser, ecalc); break;
+    default:
+      throw TupleSpaceException("traverse", "Tuple size greater than 3 unsupported.");
+  }
 }

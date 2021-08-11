@@ -7,5 +7,7 @@ add_namespace_object(Worker)
 set(algorithm_objects ${algorithm_objects} PARENT_SCOPE)
 
 if(${BuildTest})
-    add_namespace_test(TupleSpace $<TARGET_OBJECTS:Variable>)
+    add_namespace_test(TupleSpace
+        ${it_objects}
+        $<TARGET_OBJECTS:Variable>)
 endif()

@@ -12,8 +12,8 @@ namespace it {
 class Measure
 {
 public:
-  using data_type = double;
-  using result_type = std::vector<data_type>;
+  using data_t = double;
+  using result_type = std::vector<data_t>;
 
   virtual ~Measure(){};
 
@@ -25,6 +25,9 @@ public:
    */
   virtual result_type compute(EntropyCalculator& ecalc,
                               Variable::indexes const& tuple) const = 0;
+  virtual void compute(EntropyCalculator& ecalc,
+                              Variable::indexes const& tuple,
+                              result_type& result) const = 0;
 
   /**
    * Compute the information theory measure with the the given variables,
@@ -34,6 +37,10 @@ public:
   virtual result_type compute(EntropyCalculator& ecalc,
                               Variable::indexes const& tuple,
                               Entropy const& entropy) const = 0;
+  virtual void compute(EntropyCalculator& ecalc,
+                              Variable::indexes const& tuple,
+                              Entropy const& entropy,
+                              result_type& result) const = 0;
 
   /**
    * Return a comma-separated header string corresponding to the full results
@@ -42,6 +49,14 @@ public:
    * @return header string
    */
   virtual std::string header(int d, bool full_output) const = 0;
+
+  /**
+   * Return array of names for each column in the output
+   * @param d tuple size
+   * @param full_output whether header should include all subcalculation names
+   * @return array of column names in the output
+   */
+  virtual std::vector<std::string> const& names(int d, bool full_output) const = 0;
 
   /** Whether this measure uses intermediate entropy calculations
    */

@@ -30,59 +30,89 @@ class Distribution
 private:
   std::vector<DistributionData> data;
   std::vector<int> factors;
+  std::size_t size;
+  std::size_t nvar;
 
 public:
   using Data = DistributionData;
   using value_type = Data;
 
   Distribution()
-    : factors(){};
+    : data(0)
+    , factors(0)
+    , size(0)
+    , nvar(0)
+  {};
 
   /** Construct directly from dimension strides
    */
   template<class Container>
   Distribution(Container const& strides)
-    : factors()
+    : Distribution()
   {
-    std::size_t size = 1;
-    for (auto stride : strides) {
-      factors.push_back(size);
-      size *= stride;
+    // Dynamically resize factors
+    std::size_t next_nvar = strides.size();
+    if (this->nvar < next_nvar) {
+      this->factors.resize(next_nvar);
     }
-    this->data.resize(size);
-    for (std::size_t ii = 0; ii < size; ii++)
-      this->data[ii] = 0;
+    this->nvar = next_nvar;
+
+    // Dynamically resize data
+    std::size_t next_size = 1;
+    for (std::size_t ii = 0; ii < this->nvar; ii++) {
+      this->factors[ii] = next_size;
+      next_size *= strides[ii];
+    }
+    if (this->size < next_size) {
+      this->data.resize(next_size);
+    }
+    this->size = next_size;
+    this->data.assign(this->size, 0);
+  };
+
+  void
+  initialize(Variable::tuple const& vars, Variable::indexes const& indexes)
+  {
+    // Dynamically resize factors
+    std::size_t next_nvar = indexes.size();
+    if (this->nvar < next_nvar) {
+      this->factors.resize(next_nvar);
+    }
+    this->nvar = next_nvar;
+
+    // Dynamically resize data
+    std::size_t next_size = 1;
+    for (size_t ii = 0; ii < nvar; ii++) {
+      this->factors[ii] = next_size;
+      next_size *= vars[indexes[ii]].bins();
+    }
+    if (this->size < next_size) {
+      this->data.resize(next_size);
+    }
+    this->size = next_size;
+    this->data.assign(this->size, 0); // SEGFAULT
   };
 
   /** Construct from a Variable tuple
    */
   Distribution(Variable::tuple const& vars)
+    : Distribution()
   {
-    int size = 1;
-    int nvar = vars.size();
-    this->factors.resize(nvar);
-    for (int ii = 0; ii < nvar; ii++) {
-      this->factors[ii] = size;
-      size *= vars[ii].bins();
+    Variable::indexes indexes(vars.size());
+    int ii = 0;
+    for (auto& index : indexes) {
+      index = ii;
+      ii++;
     }
-    this->data.resize(size);
-    for (int ii = 0; ii < size; ii++)
-      this->data[ii] = 0;
+    initialize(vars, indexes);
   }
 
   Distribution(Variable::tuple const& vars, Variable::indexes const& indexes)
+    : Distribution()
   {
-    int size = 1;
-    int nvar = indexes.size();
-    this->factors.resize(nvar);
-    for (int ii = 0; ii < nvar; ii++) {
-      this->factors[ii] = size;
-      size *= vars[indexes[ii]].bins();
-    }
-    this->data.resize(size);
-    for (int ii = 0; ii < size; ii++)
-      this->data[ii] = 0;
+    initialize(vars, indexes);
   }
+
 
   //
   // accessors
@@ -103,7 +133,7 @@ public:
   {
     int index = 0;
     for (int ii = 0; it != end; ++it, ii++)
-      index += factors[ii] * (*it);
+      index += this->factors[ii] * (*it);
     return this->data[index];
   }
   template<typename Iter>
@@ -111,7 +141,7 @@ public:
   {
     int index = 0;
     for (int ii = 0; it != end; ++it, ii++)
-      index += factors[ii] * (*it);
+      index += this->factors[ii] * (*it);
     return this->data[index];
   }
   template<typename Container>
@@ -133,9 +163,9 @@ public:
   {
     int index = 0;
     for (int ii = 0; it != end; ++it, ii++)
-      index += factors[ii] * (*it);
-    if (index >= this->data.size())
-      throw DistributionOutOfRange("at", index, this->data.size());
+      index += this->factors[ii] * (*it);
+    if (index >= this->size)
+      throw DistributionOutOfRange("at", index, this->size);
     return this->data[index];
   }
   template<typename Iter>
@@ -143,9 +173,9 @@ public:
   {
     int index = 0;
     for (int ii = 0; it != end; ++it, ii++)
-      index += factors[ii] * (*it);
-    if (index >= this->data.size())
-      throw DistributionOutOfRange("at", index, this->data.size());
+      index += this->factors[ii] * (*it);
+    if (index >= this->size)
+      throw DistributionOutOfRange("at", index, this->size);
     return this->data[index];
   }
   template<typename Container>
@@ -167,7 +197,7 @@ public:
   {
     int index = 0;
     for (int ii = 0; ii < d; ii++)
-      index += factors[ii] * indices[ii];
+      index += this->factors[ii] * indices[ii];
     return this->data[index];
   };
   template<typename Integer>
@@ -175,7 +205,7 @@ public:
   {
     int index = 0;
     for (int ii = 0; ii < d; ii++)
-      index += factors[ii] * indices[ii];
+      index += this->factors[ii] * indices[ii];
     return this->data[index];
   };
 
@@ -219,8 +249,9 @@ public:
    */
   void scale(double factor)
   {
-    for (auto& val : this->data)
-      val *= factor;
+    for (std::size_t i = 0; i < this->size; i++) {
+      this->data[i] *= factor;
+    }
   };
 
   /** Normalize distribution
@@ -228,11 +259,14 @@ public:
   void normalize()
   {
     std::size_t norm = 0;
-    for (auto val : this->data)
-      norm += val;
-    this->scale(1.0 / norm);
+    for (std::size_t i = 0; i < this->size; i++) {
+      norm += this->data[i];
+    }
+    if (norm)
+      this->scale(1.0 / norm);
   };
 
+#if 0
   //
   // Serialization
   //
@@ -246,13 +280,13 @@ public:
 
     // explicit data
     // since this class specializes std::vector need push/pop each element
-    int size = 0;
+    std::size_t size = 0;
     ar& size;
     this->data.resize(size);
-    for (int i = 0; i < size; i++) {
+    for (std::size_t i = 0; i < size; i++) {
       Data dat;
       ar& dat;
-      (this->data)[i] = dat;
+      this->data[i] = dat;
     }
   }
   template<class Archive>
@@ -263,13 +297,14 @@ public:
 
     // explicit data
     // since this class specializes std::vector need push/pop each element
-    int size = this->data.size();
+    auto size = this->size;
     ar& size;
-    for (int i = 0; i < size; i++) {
-      ar&(this->data)[i];
+    for (std::size_t i = 0; i < size; i++) {
+      ar(&this->data[i]);
     }
   }
   BOOST_SERIALIZATION_SPLIT_MEMBER()
+#endif
 };
 
 } // it

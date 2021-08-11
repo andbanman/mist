@@ -5,6 +5,7 @@ project("mist")
 option(BuildDoc "Build dynamic documentation" OFF)
 option(BuildTest "Build unit tests (default ON)" OFF)
 option(BuildPython "Build python extension library" OFF)
+option(BuildPyPi "Build python package for PyPi upload" OFF)
 option(BuildStatic "Build static binaries" OFF)
 option(InstallExtern "Install third party libraries" ON)
 set(PythonMinVersion "3.6" CACHE STRING "Minimum Python Version to build against")
@@ -23,6 +24,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
     CACHE PATH "Output directory for executables and DLL's.")
 
 set(public_include_path "${PROJECT_SOURCE_DIR}/include")
+
+if (${BuildPyPi} AND NOT ${InstallExtern})
+    message(WARNING "BuildPyPi: implies InstallExtern")
+    set(InstallExtern ON)
+endif()
 
 if (${BuildStatic})
     if (${BuildPython})
@@ -46,6 +52,9 @@ find_package(Boost REQUIRED COMPONENTS
     serialization
 )
 list(APPEND extern_libraries ${Boost_LIBRARIES})
+
+# TODO make this programatic
+list(APPEND extern_libraries /usr/lib/x86_64-linux-gnu/libstdc++.so.6)
 
 # TODO Boost Min Version 1.58.0
 set(BOOST_VERSION_STRING "${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}")

@@ -13,37 +13,38 @@ namespace it {
 class EntropyCalculator
 {
 public:
-  // TODO split pd-cache and entropy-cache
-  using cache_type = cache::Cache<entropy_type>;
-  using cache_ptr_type = std::shared_ptr<cache_type>;
+  using cache_ptr_type = std::shared_ptr<cache::Cache>;
   using counter_type = Counter;
   using counter_ptr_type = std::shared_ptr<counter_type>;
-  using tuple_type = Variable::indexes;
+  using tuple_t = Variable::indexes;
+  using variables_ptr = std::shared_ptr<Variable::tuple>;
 
 private:
-  Variable::tuple vars;
+  variables_ptr vars; //TODO make this a pointer
   counter_ptr_type counter;
+  // keep a distribution "buffer" to avoid thrashing malloc/free
+  it::Distribution dist;
   // TODO simpler caches
   cache_ptr_type cache = 0;
   cache_ptr_type cache1d = 0;
   cache_ptr_type cache2d = 0;
   cache_ptr_type cache3d = 0;
 
-  void init_caches(std::vector<cache_ptr_type>& caches);
+  void init_caches(std::vector<cache_ptr_type> const& caches);
   static entropy_type entropy_it_distribution(Distribution const& pd);
-  entropy_type entropy_cache(tuple_type const& tuple, cache_ptr_type& cache);
+  entropy_type entropy_cache(tuple_t const& tuple, cache_ptr_type& cache);
 
 public:
-  EntropyCalculator(Variable::tuple const& vars, cache_ptr_type cache);
-  EntropyCalculator(Variable::tuple const& vars,
-                    counter_ptr_type counter,
-                    cache_ptr_type cache);
-  EntropyCalculator(Variable::tuple const& vars,
-                    counter_ptr_type counter,
-                    std::vector<cache_ptr_type>& caches);
-  EntropyCalculator(Variable::tuple const& vars, counter_ptr_type counter);
-  EntropyCalculator(Variable::tuple const& vars);
-  entropy_type entropy(tuple_type const& tuple);
+  EntropyCalculator(variables_ptr const& vars, cache_ptr_type const& cache);
+  EntropyCalculator(variables_ptr const& vars,
+                    counter_ptr_type const& counter,
+                    cache_ptr_type const& cache);
+  EntropyCalculator(variables_ptr const& vars,
+                    counter_ptr_type const& counter,
+                    std::vector<cache_ptr_type> const& caches);
+  EntropyCalculator(variables_ptr const& vars, counter_ptr_type const& counter);
+  EntropyCalculator(variables_ptr const& vars);
+  entropy_type entropy(tuple_t const& tuple);
 };
 
 class EntropyCalculatorException : public std::exception

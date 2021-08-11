@@ -15,10 +15,9 @@ class VectorCounter : public Counter
 public:
   VectorCounter(){};
   ~VectorCounter(){};
-  Distribution count(Variable const& var);
-  Distribution count(Variable::tuple const& vars);
-  Distribution count(Variable::tuple const& vars,
-                     Variable::indexes const& indexes);
+  void count(Variable const&, Distribution&);
+  void count(Variable::tuple const&, Distribution&);
+  void count(Variable::tuple const&, Variable::indexes const&, Distribution&);
 };
 
 class VectorCounterException : public std::exception

@@ -67,10 +67,10 @@ add_object(Version Version.cpp ${include_path}/Version.hpp)
 add_object(Search Search.cpp ${include_path}/Search.hpp ${include_path}/mist.hpp ${include_path}/Version.hpp)
 
 # Namespaces
-add_subdirectory(algorithm)
 add_subdirectory(cache)
 add_subdirectory(io)
 add_subdirectory(it)
+add_subdirectory(algorithm)
 
 # TODO use generator expressions instead
 if (${BuildStatic})
@@ -100,6 +100,8 @@ if (NOT ${BuildPython})
     if (${InstallExtern})
         set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH $ORIGIN/extern)
         resolve_symlinks(install_extern_libraries ${extern_libraries})
+        # XXX need to copy the symlink as well
+        list(APPEND install_extern_libraries /usr/lib/x86_64-linux-gnu/libstdc++.so.6)
         install(FILES ${install_extern_libraries} DESTINATION lib/${PROJECT_NAME}/extern)
     endif()
 
@@ -119,6 +121,8 @@ else()
     if (${InstallExtern})
         set_target_properties(${python_library} PROPERTIES INSTALL_RPATH $ORIGIN/extern)
         resolve_symlinks(install_extern_libraries ${extern_libraries})
+        # XXX need to copy the symlink as well
+        list(APPEND install_extern_libraries /usr/lib/x86_64-linux-gnu/libstdc++.so.6)
         install(FILES ${install_extern_libraries} DESTINATION ${INSTALL_LIB_PYTHON_PATH}/extern)
     endif()
 endif()

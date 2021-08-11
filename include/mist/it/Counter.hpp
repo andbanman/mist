@@ -13,10 +13,11 @@ class Counter
 {
 public:
   virtual ~Counter(){};
-  virtual Distribution count(Variable const& var) = 0;
-  virtual Distribution count(Variable::tuple const&) = 0;
-  virtual Distribution count(Variable::tuple const&,
-                             Variable::indexes const& indexes) = 0;
+  virtual void count(Variable const&, Distribution&) = 0;
+  virtual void count(Variable::tuple const&, Distribution&) = 0;
+  virtual void count(Variable::tuple const&,
+                     Variable::indexes const&,
+                     Distribution&) = 0;
 };
 
 } // it

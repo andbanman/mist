@@ -8,47 +8,47 @@ using namespace mist::it;
 using sub2 = SymmetricDelta::sub_calc_2d;
 using sub3 = SymmetricDelta::sub_calc_3d;
 
-SymmetricDelta::result_type
-compute_2d(EntropyCalculator& ecalc, Variable::indexes const& vars)
+void
+compute_2d(EntropyCalculator& ecalc, Variable::indexes const& vars, SymmetricDelta::result_type& res)
 {
-  SymmetricDelta::result_type res((std::size_t)sub2::size);
-
+  if (res.size() != (std::size_t)sub2::size) {
+    res.resize((std::size_t)sub2::size);
+  }
   auto e0 = ecalc.entropy({ vars[0] });
   auto e1 = ecalc.entropy({ vars[1] });
   auto e01 = ecalc.entropy({ vars[0], vars[1] });
-  SymmetricDelta::data_type DD = e0 + e1 - e01;
+  SymmetricDelta::data_t DD = e0 + e1 - e01;
   res[(int)sub2::entropy0] = e0;
   res[(int)sub2::entropy1] = e1;
   res[(int)sub2::entropy01] = e01;
   res[(int)sub2::symmetric_mist] = DD;
-
-  return res;
 }
 
-SymmetricDelta::result_type
+void
 compute_2d(EntropyCalculator& ecalc,
            Variable::indexes const& vars,
-           Entropy const& entropy)
+           Entropy const& entropy,
+           SymmetricDelta::result_type &res)
 {
-  SymmetricDelta::result_type res((std::size_t)sub2::size);
-
+  if (res.size() != (std::size_t)sub2::size) {
+    res.resize((std::size_t)sub2::size);
+  }
   auto e0 = entropy[(int)d2::e0];
   auto e1 = entropy[(int)d2::e1];
   auto e01 = entropy[(int)d2::e01];
-  SymmetricDelta::data_type DD = e0 + e1 - e01;
+  SymmetricDelta::data_t DD = e0 + e1 - e01;
   res[(int)sub2::entropy0] = e0;
   res[(int)sub2::entropy1] = e1;
   res[(int)sub2::entropy01] = e01;
   res[(int)sub2::symmetric_mist] = DD;
-
-  return res;
 }
 
-SymmetricDelta::result_type
-compute_3d(EntropyCalculator& ecalc, Variable::indexes const& vars)
+void
+compute_3d(EntropyCalculator& ecalc, Variable::indexes const& vars, SymmetricDelta::result_type& res)
 {
-  SymmetricDelta::result_type res((std::size_t)sub3::size);
-
+  if (res.size() != (std::size_t)sub3::size) {
+    res.resize((std::size_t)sub3::size);
+  }
   auto e0 = ecalc.entropy({ vars[0] });
   auto e1 = ecalc.entropy({ vars[1] });
   auto e2 = ecalc.entropy({ vars[2] });
@@ -82,17 +82,17 @@ compute_3d(EntropyCalculator& ecalc, Variable::indexes const& vars)
   res[(int)sub3::diffInfo1] = D1;
   res[(int)sub3::diffInfo2] = D2;
   res[(int)sub3::symmetric_mist] = DD;
-
-  return res;
 }
 
-SymmetricDelta::result_type
+void
 compute_3d(EntropyCalculator& ecalc,
            Variable::indexes const& vars,
-           Entropy const& entropy)
+           Entropy const& entropy,
+           SymmetricDelta::result_type& res)
 {
-  SymmetricDelta::result_type res((std::size_t)sub3::size);
-
+  if (res.size() != (std::size_t)sub3::size) {
+    res.resize((std::size_t)sub3::size);
+  }
   auto e0 = entropy[(int)d3::e0];
   auto e1 = entropy[(int)d3::e1];
   auto e2 = entropy[(int)d3::e2];
@@ -126,22 +126,29 @@ compute_3d(EntropyCalculator& ecalc,
   res[(int)sub3::diffInfo1] = D1;
   res[(int)sub3::diffInfo2] = D2;
   res[(int)sub3::symmetric_mist] = DD;
-
-  return res;
 }
 
 SymmetricDelta::result_type
 SymmetricDelta::compute(EntropyCalculator& ecalc,
                         Variable::indexes const& tuple) const
 {
-  SymmetricDelta::result_type ret;
+  result_type result;
+  compute(ecalc, tuple, result);
+  return result;
+}
+
+void
+SymmetricDelta::compute(EntropyCalculator& ecalc,
+                        Variable::indexes const& tuple,
+                        result_type &result) const
+{
   auto size = tuple.size();
   switch (size) {
     case 2:
-      ret = compute_2d(ecalc, tuple);
+      compute_2d(ecalc, tuple, result);
       break;
     case 3:
-      ret = compute_3d(ecalc, tuple);
+      compute_3d(ecalc, tuple, result);
       break;
     default:
       throw SymmetricDeltaException("compute",
@@ -149,7 +156,6 @@ SymmetricDelta::compute(EntropyCalculator& ecalc,
                                       std::to_string(size) +
                                       ", valid range [2,3]");
   }
-  return ret;
 }
 
 SymmetricDelta::result_type
@@ -157,14 +163,24 @@ SymmetricDelta::compute(EntropyCalculator& ecalc,
                         Variable::indexes const& tuple,
                         Entropy const& e) const
 {
-  SymmetricDelta::result_type ret;
+  result_type result;
+  compute(ecalc, tuple, e, result);
+  return result;
+}
+
+void
+SymmetricDelta::compute(EntropyCalculator& ecalc,
+                        Variable::indexes const& tuple,
+                        Entropy const& e,
+                        result_type &result) const
+{
   auto size = tuple.size();
   switch (size) {
     case 2:
-      ret = compute_2d(ecalc, tuple, e);
+      compute_2d(ecalc, tuple, e, result);
       break;
     case 3:
-      ret = compute_3d(ecalc, tuple, e);
+      compute_3d(ecalc, tuple, e, result);
       break;
     default:
       throw SymmetricDeltaException("compute",
@@ -172,48 +188,47 @@ SymmetricDelta::compute(EntropyCalculator& ecalc,
                                       std::to_string(size) +
                                       ", valid range [2,3]");
   }
-  return ret;
+}
+
+const std::vector<std::string> names_d2 = {"v0","v1","SymmetricDelta"};
+const std::vector<std::string> names_d3 = {"v0","v1","v2","SymmetricDelta"};
+const std::vector<std::string> names_d2_full = {"v0","v1","entropy0","entropy1","entropy01","SymmetricDelta"};
+const std::vector<std::string> names_d3_full = {"v0","v1","v2",
+          "entropy0" ,"entropy1"
+          ,"entropy2" ,"entropy01"
+          ,"entropy02" ,"entropy12"
+          ,"entropy012" ,"jointInfo01"
+          ,"jointInfo02" ,"jointInfo12"
+          ,"jointInfo012" ,"diffInfo0"
+          ,"diffInfo1" ,"diffInfo2"
+          ,"SymmetricDelta"};
+
+std::vector<std::string> const&
+SymmetricDelta::names(int d, bool full_output) const
+{
+  switch (d) {
+    case 2:
+      return (full_output) ? names_d2_full : names_d2;
+      break;
+    case 3:
+      return (full_output) ? names_d3_full : names_d3;
+      break;
+    default:
+      throw SymmetricDeltaException("names",
+                                    "Unsupported tuple size " +
+                                      std::to_string(d) +
+                                      ", valid range [2,3]");
+  }
 }
 
 std::string
 SymmetricDelta::header(int d, bool full_output) const
 {
-  std::string h;
-
-  if (!full_output) {
-    switch (d) {
-      case 2:
-        return "v0,v1,SymmetricDelta";
-      case 3:
-        return "v0,v1,v2,SymmetricDelta";
-    }
+  auto n = names(d,full_output);
+  std::string h = n.front();
+  auto N = n.size();
+  for (int ii = 1; ii < N; ii++) {
+    h += "," + n[ii];
   }
-
-  switch (d) {
-    case 2:
-      h = "v0,v1,"
-          "entropy0,entropy1,entropy01"
-          ",SymmetricDelta";
-      break;
-    case 3:
-      h = "v0,v1,v2,"
-          "entropy0"
-          ",entropy1"
-          ",entropy2"
-          ",entropy01"
-          ",entropy02"
-          ",entropy12"
-          ",entropy012"
-          ",jointInfo01"
-          ",jointInfo02"
-          ",jointInfo12"
-          ",jointInfo012"
-          ",diffInfo0"
-          ",diffInfo1"
-          ",diffInfo2"
-          ",SymmetricDelta";
-      break;
-  }
-
   return h;
 }

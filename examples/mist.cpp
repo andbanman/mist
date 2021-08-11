@@ -31,7 +31,7 @@ struct Parameters {
     int tuple_size;
     long tuple_limit;
     int num_threads;
-    bool pd_cache;
+    bool cache;
 };
 
 void printParameters(Parameters const& p) {
@@ -42,7 +42,7 @@ void printParameters(Parameters const& p) {
     std::cout << "outfile: " << p.outfile << "\n";
     std::cout << "tuple_size: " << p.tuple_size << "\n";
     std::cout << "num_threads: " << p.num_threads << "\n";
-    std::cout << "pd_cache: " << p.pd_cache << "\n";
+    std::cout << "cache: " << p.cache << "\n";
 }
 
 void printVersion(std::string const& version) {
@@ -61,7 +61,7 @@ void load_yml_config(std::string file, mist::Search &mist) {
         // parse out variables
         // TODO: interpret ranges
         auto variablesYml = variableGroupYml["variables"];
-        std::vector<int> vars;
+        std::vector<mist::Variable::index_t> vars;
         for (std::size_t jj = 0; jj < variablesYml.size(); jj++) {
             vars.push_back(variablesYml[jj].as<int>());
         }
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     dparam.tuple_size = 2;
     dparam.tuple_limit = 0;
     dparam.num_threads = 2;
-    dparam.pd_cache = true;
+    dparam.cache = true;
     dparam.measure = "symmetricdelta";
     dparam.tuple_algorithm = "completion";
     dparam.pd_algorithm = "vector";
@@ -116,12 +116,14 @@ int main(int argc, char *argv[]) {
         ("tuple-size,s", po::value(&param.tuple_size)->default_value(dparam.tuple_size), "Number of variables in each tuple")
         ("tuple-limit,l", po::value(&param.tuple_limit)->default_value(dparam.tuple_limit), "Maximum number of tuples to process")
         ("measure,m", po::value(&param.measure)->default_value(dparam.measure), "Information Theory Measure")
+        ("progress,p", "Print progress to stderr")
         ("version,v", "Print version string and exit")
     ;
 
     po::options_description opt_perf("Performance-tuning options");
     opt_perf.add_options()
         ("pd-algorithm", po::value(&param.pd_algorithm)->default_value(dparam.pd_algorithm), "Probabilty distribution counting algorithm")
+        ("cache,C", po::value(&param.cache)->default_value(dparam.cache), "Entropy cache enabled")
         ("threads,t", po::value(&param.num_threads)->default_value(dparam.num_threads), "Number of threads")
     ;
 
@@ -145,11 +147,14 @@ int main(int argc, char *argv[]) {
     bool help = vm.count("help");
     bool debug = vm.count("debug");
     bool version = vm.count("version");
+    bool progress = vm.count("progress");
 
     mist::Search mist;
 
     if (!param.configfile.empty()) {
         load_yml_config(param.configfile, mist);
+    } else {
+        mist.set_tuple_size(param.tuple_size);
     }
 
     if (help) {
@@ -172,9 +177,10 @@ int main(int argc, char *argv[]) {
     //
     // Run computation
     //
+    mist.set_cache_enabled(param.cache);
     mist.set_probability_algorithm(param.pd_algorithm);
     mist.set_ranks(param.num_threads);
-    mist.set_tuple_size(param.tuple_size);
+    mist.set_show_progress(progress);
     mist.set_outfile(param.outfile);
     mist.load_file(param.infile);
     mist.start();
