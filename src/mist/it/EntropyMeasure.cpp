@@ -46,6 +46,7 @@ EntropyMeasure::compute(EntropyCalculator& ecalc,
 const std::vector<std::string> names_d1 = {"v0","entropy0"};
 const std::vector<std::string> names_d2 = {"v0","v1","entropy01"};
 const std::vector<std::string> names_d3 = {"v0","v1","v2","entropy012"};
+const std::vector<std::string> names_d4 = {"v0","v1","v2","v3","entropy0123"};
 
 std::vector<std::string> const&
 EntropyMeasure::names(int d, bool full_output) const
@@ -60,11 +61,14 @@ EntropyMeasure::names(int d, bool full_output) const
     case 3:
       return names_d3;
       break;
+    case 4:
+      return names_d4;
+      break;
     default:
       throw EntropyMeasureException("names",
                                     "Unsupported tuple size " +
                                       std::to_string(d) +
-                                      ", valid range [1,3]");
+                                      ", valid range [1,4]");
   }
 }
 
