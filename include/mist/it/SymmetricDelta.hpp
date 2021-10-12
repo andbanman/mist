@@ -58,6 +58,35 @@ public:
     size
   };
 
+  enum struct sub_calc_4d
+  {
+    entropy0,
+    entropy1,
+    entropy2,
+    entropy3,
+    entropy01,
+    entropy02,
+    entropy03,
+    entropy12,
+    entropy13,
+    entropy23,
+    entropy012,
+    entropy013,
+    entropy023,
+    entropy123,
+    entropy0123,
+    jointInfo012,
+    jointInfo013,
+    jointInfo023,
+    jointInfo123,
+    diffInfo0,
+    diffInfo1,
+    diffInfo2,
+    diffInfo3,
+    symmetric_delta,
+    size
+  };
+
   bool full_entropy() const { return true; };
 };
 
