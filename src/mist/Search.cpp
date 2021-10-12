@@ -222,10 +222,10 @@ Search::get_results()
 void
 Search::set_tuple_size(int size)
 {
-  if (size < 2 || size > 3) {
+  if (size < 2 || size > 4) {
     throw SearchException("set_tuple_size",
                           "Invalid tuple size " + std::to_string(size) +
-                            ", valid range is [2,3]");
+                            ", valid range is [2,4]");
   }
   pimpl->tuple_size = size;
 }
