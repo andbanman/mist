@@ -87,7 +87,7 @@ Data can be read from a CSV file, and the parse order is set explicitly
 ::
 
     import libmist
-    search = libmist.Mist()
+    search = libmist.Search()
     search.load_file('/path/to/data.csv')
 
     # parse order explicitly set with these methods
@@ -137,7 +137,7 @@ Select the measure you want to compute with `Mist::set_measure <api.html#_CPPv2N
 ::
 
     import libmist
-    search = libmist.Mist()
+    search = libmist.Search()
     search.measure = "SymmetricDelta"
 
 The appropriate measure depends on the data and the question you are trying to answer. Currently, there are two measures available: Joint Entropy and Symmetric Delta.
@@ -248,7 +248,7 @@ You can count the number of tuples contained the tuple space with `TupleSpace::c
 
 ::
 
-    search.tuple_space = mist.TupleSpace(5000, 3)
+    search.tuple_space = libmist.TupleSpace(5000, 3)
     search.tuple_space.count_tuples()
     # returns 20820835000
 
@@ -260,7 +260,7 @@ Consider a more realistic example in genetics. Suppose we have a single phenotyp
 
 ::
 
-    ts = mist.TupleSpace()
+    ts = libmist.TupleSpace()
     ts.addVariableGroup("phenotype", [0])
     ts.addVariableGroup("genotypes", list(range(1, 5001)))
     ts.addVariableGroupTuple(["genotypes", "phenotype"])
