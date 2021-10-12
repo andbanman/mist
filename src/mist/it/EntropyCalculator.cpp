@@ -109,10 +109,9 @@ EntropyCalculator::entropy(tuple_t const& tuple)
       case 3:
         return entropy_cache(tuple, this->cache3d);
       default:
-        throw EntropyCalculatorException("entropy",
-                                         "Unsupported tuple size " +
-                                           std::to_string(size) +
-                                           ", valid range [1,3]");
+        this->counter->count(*vars, tuple, dist);
+        dist.normalize();
+        return entropy_it_distribution(dist);
     }
   }
 }
