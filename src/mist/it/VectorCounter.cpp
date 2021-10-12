@@ -63,6 +63,28 @@ count3d(std::size_t varlen,
   }
 }
 
+static void
+count4d(std::size_t varlen,
+        Variable::tuple const& vars,
+        Variable::indexes const& indexes,
+        Distribution& dist)
+{
+  auto b0 = vars[indexes[0]].bins();
+  auto b1 = vars[indexes[1]].bins();
+  auto b2 = vars[indexes[2]].bins();
+  auto b3 = vars[indexes[3]].bins();
+  for (std::size_t jj = 0; jj < varlen; jj++) {
+    auto v0 = vars[indexes[0]][jj];
+    auto v1 = vars[indexes[1]][jj];
+    auto v2 = vars[indexes[2]][jj];
+    auto v3 = vars[indexes[3]][jj];
+    if (!VARIABLE_MISSING_VAL(v0) && !VARIABLE_MISSING_VAL(v1) &&
+        !VARIABLE_MISSING_VAL(v2) && !VARIABLE_MISSING_VAL(v3)) {
+      ++dist(v0, v1, v2, v3, b0, b1, b2, b3);
+    }
+  }
+}
+
 //
 // Subset variables
 //
@@ -86,11 +108,14 @@ VectorCounter::count(Variable::tuple const& vars,
     case 3:
       count3d(varlen, vars, indexes, dist);
       break;
+    case 4:
+      count4d(varlen, vars, indexes, dist);
+      break;
     default:
       throw VectorCounterException("count",
                                    "Unsupported tuple size " +
                                      std::to_string(nvars) +
-                                     ", valid range [1,3]");
+                                     ", valid range [1,4]");
   }
 }
 

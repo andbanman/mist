@@ -230,6 +230,14 @@ public:
   {
     return this->data[v0 + b0 * v1 + b0 * b1 * v2];
   };
+  Data const& operator()(int v0, int v1, int v2, int v3, int b0, int b1, int b2, int b3) const
+  {
+    return this->data[v0 + b0*v1 + b0*b1*v2 + b0*b1*b2*v3];
+  };
+  Data& operator()(int v0, int v1, int v2, int v3, int b0, int b1, int b2, int b3)
+  {
+    return this->data[v0 + b0*v1 + b0*b1*v2 + b0*b1*b2*v3];
+  };
 
   bool operator==(Distribution const& other) const noexcept
   {
