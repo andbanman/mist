@@ -154,6 +154,48 @@ void static count3d(BitsetTable const& bitsetTable,
   }
 }
 
+void static count4d(BitsetTable const& bitsetTable,
+                    Variable::tuple const& vars,
+                    Variable::indexes const& indexes,
+                    Distribution& dist)
+{
+  int bins[4];
+  auto n0 = vars[indexes[0]].bins();
+  auto v0 = vars[indexes[0]].index();
+  auto n1 = vars[indexes[1]].bins();
+  auto v1 = vars[indexes[1]].index();
+  auto n2 = vars[indexes[2]].bins();
+  auto v2 = vars[indexes[2]].index();
+  auto n3 = vars[indexes[3]].bins();
+  auto v3 = vars[indexes[3]].index();
+  auto size = bitsetTable.front().front().size();
+
+  // preallocate intermediarty results
+  Bitset result01(size);
+  Bitset result012(size);
+  Bitset result0123(size);
+
+  for (int b0 = 0; b0 < n0; b0++) {
+    for (int b1 = 0; b1 < n1; b1++) {
+      result01 = bitsetTable[v0][b0];
+      result01 &= bitsetTable[v1][b1];
+      for (int b2 = 0; b2 < n2; b2++) {
+        result012 = result01;
+        result012 &= bitsetTable[v2][b2];
+        for (int b3 = 0; b3 < n3; b3++) {
+          result0123 = result012;
+          result0123 &= bitsetTable[v3][b3];
+          bins[0] = b0;
+          bins[1] = b1;
+          bins[2] = b2;
+          bins[3] = b3;
+          dist(4, bins) = result0123.count();
+        }
+      }
+    }
+  }
+}
+
 void
 BitsetCounter::count(Variable::tuple const& vars,
                      Variable::indexes const& indexes,
@@ -173,6 +215,9 @@ BitsetCounter::count(Variable::tuple const& vars,
       break;
     case 3:
       count3d(this->bits, vars, indexes, dist);
+      break;
+    case 4:
+      count4d(this->bits, vars, indexes, dist);
       break;
     default:
       int vals[nvars];
