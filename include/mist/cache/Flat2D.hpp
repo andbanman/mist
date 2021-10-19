@@ -52,6 +52,7 @@ public:
 
 private:
   std::vector<val_type> data;
+  std::size_t nvar;
 };
 
 } // cache

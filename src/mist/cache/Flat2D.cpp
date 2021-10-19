@@ -16,27 +16,28 @@ Flat2D::Flat2D()
 }
 
 Flat2D::Flat2D(std::size_t nvar)
+  : nvar(nvar)
 {
   this->data.resize(binomial(nvar, 2));
-  this->data.assign(nvar, DOUBLE_UNSET);
+  this->data.assign(data.size(), DOUBLE_UNSET);
 }
 
 bool
 Flat2D::has(key_type const& key)
 {
-  return (data[index(data.size(), key[0], key[1])] != DOUBLE_UNSET);
+  return (data[index(nvar, key[0], key[1])] != DOUBLE_UNSET);
 }
 
 void
 Flat2D::put(key_type const& key, val_type const& val)
 {
-  this->data[index(data.size(), key[0], key[1])] = val;
+  this->data[index(nvar, key[0], key[1])] = val;
 }
 
 Flat2D::val_type
 Flat2D::get(key_type const& key)
 {
-  auto ii = index(data.size(), key[0], key[1]);
+  auto ii = index(nvar, key[0], key[1]);
   if (this->data[ii] != DOUBLE_UNSET) {
     this->_hits++;
     return this->data[ii];
