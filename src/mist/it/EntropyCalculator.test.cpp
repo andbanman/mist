@@ -61,3 +61,16 @@ BOOST_AUTO_TEST_CASE(EntropyCalculator_entropy_correct1)
   BOOST_TEST(ec.entropy({ 1, 2 }) == 1.5);
   BOOST_TEST(ec.entropy({ 0, 1, 2 }) == 2);
 }
+
+BOOST_AUTO_TEST_CASE(EntropyCalculator_entropy_correct_d4)
+{
+  int n = 4;
+  int m = 3;
+  io::DataMatrix test_matrix(test_data, n, m);
+
+  it::EntropyCalculator ec(
+      it::EntropyCalculator::variables_ptr(test_matrix.variables()));
+
+  // 1.58496250072115
+  BOOST_TEST(ec.entropy({ 0, 1, 2, 3 }) == 1.5849625007211561);
+}
