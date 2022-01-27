@@ -1,25 +1,27 @@
-MIST Sample Experiment
+Mist Sample Experiment
 ======================
 
-The `example.py` script generates random data with an internal structure for MIST to detect.
+The `example.py` script generates random data with an internal structure, and runs three searches to detect that structure:
 
-Expected Values
----------------
-There are three features MIST should find:
+1. A Mutual Information (MI) search over all variables
+2. A MI search over a subset of variables
+3. A Delta-3 search over all variables.
 
-1. A strong Mutual Information signal among variables 30 through 59, as revealed by mi.png.
-2. A relatively weak MI signal among variables 0 through 29, as revealed by mi_limited.png.
-3. A strong Delta-3 signal among variables 60 through 89.
+The output is saved in `.png` and `.csv` files.
 
-If the random seed in example.py is left unchanged, then the output files should exactly match the files in the *expect/* folder
-
-Example
--------
 ```
 python3 example.py
 ```
 
-Produces output identical (when random seed is unchanged) to
+Expected Values
+---------------
+There are three features Mist should find:
+
+1. A strong MI signal among variables 30 through 59, as revealed by mi.png.
+2. A relatively weak MI signal among variables 0 through 29, as revealed by mi_limited.png.
+3. A strong Delta-3 signal among variables 60 through 89.
+
+If the random seed in example.py is left unchanged, then the output files should exactly match the files in `expected/` and the program output matches
 
 ```
 Generating sample data and results for Libmist v1.3.0
