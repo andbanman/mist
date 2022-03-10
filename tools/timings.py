@@ -34,7 +34,7 @@ def time_mist(q = 50,
               algs = ['vector','bitset']):
     search = lm.Search()
     search.measure = "symmetricdelta"
-    df = pd.DataFrame(columns=['n','d','m','b','q','cache','alg','time'])
+    df = pd.DataFrame(columns=['n','d','m','b','r','q','cache','alg','time'])
     if (progress):
         print("%s" %(','.join(df.columns)))
     jobs = len(ns)*len(bs)*len(ms)*len(ds)*len(rs)*len(cs)*len(algs)
@@ -58,7 +58,7 @@ def time_mist(q = 50,
                                 search.cache_enabled = c
                                 t = run_times(search, q)
                                 row = pd.DataFrame(
-                                        {'n':[n],'m':[m],'d':[d],'b':[b],'q':[q],'alg':[alg],'cache':[c],'time':[t]}
+                                        {'n':[n],'m':[m],'d':[d],'b':[b],'r':[r],'q':[q],'alg':[alg],'cache':[c],'time':[t]}
                                         )
                                 if (progress):
                                     print("[%02d/%02d : %s]\n%s" %(i,jobs,datetime.datetime.now(),str(row)))
