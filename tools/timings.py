@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import libmist as lm
 import timeit
+import datetime
 
 global search
 
@@ -36,6 +37,9 @@ ds = [2]
 print("%s,%s,%s,%s,%s,%s,%s" %('n','d','m','b','q','vector','bitset'))
 df = pd.DataFrame(columns=['n','d','m','b','q','vector','bitset'])
 
+jobs = len(ns)*len(bs)*len(ms)*len(ds)*len(rs)
+i = 1
+
 for n in ns:
     for m in ms:
         for b in bs:
@@ -52,10 +56,11 @@ for n in ns:
                     tb = run_times(data, search, q)
                     search.probability_algorithm = "vector"
                     tv = run_times(data, search, q)
-                    print("%d,%d,%d,%d,%d,%f,%f" %(n,d,m,b,q,tv,tb))
+                    print("[%02d/%02d : %s] %d,%d,%d,%d,%d,%f,%f" %(i,jobs,datetime.datetime.now(),n,d,m,b,q,tv,tb))
                     # add to results
                     row = pd.DataFrame({'n':[n],'m':[m],'d':[d],'b':[b],'q':[q],'vector':[tv],'bitset':[tb]})
                     df = df.append(row, ignore_index = True)
+                    i = i + 1
 
 df.to_csv("timings.csv", index=False)
 
