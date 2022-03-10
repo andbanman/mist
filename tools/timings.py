@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import numpy as np
-import pandas ad pd
-import libmist as lm import timeit
+import pandas as pd
+import libmist as lm
+import timeit
 
 global search
 
@@ -33,6 +34,7 @@ ds = [2]
 
 # header
 print("%s,%s,%s,%s,%s,%s,%s" %('n','d','m','b','q','vector','bitset'))
+df = pd.DataFrame(columns=['n','d','m','b','q','vector','bitset'])
 
 for n in ns:
     for m in ms:
@@ -51,3 +53,9 @@ for n in ns:
                     search.probability_algorithm = "vector"
                     tv = run_times(data, search, q)
                     print("%d,%d,%d,%d,%d,%f,%f" %(n,d,m,b,q,tv,tb))
+                    # add to results
+                    row = pd.DataFrame({'n':[n],'m':[m],'d':[d],'b':[b],'q':[q],'vector':[tv],'bitset':[tb]})
+                    df = df.append(row, ignore_index = True)
+
+df.to_csv("timings.csv", index=False)
+
