@@ -25,7 +25,7 @@ ax.text(0.80, 0.10, "n=50,b=2", transform=ax.transAxes, fontsize=12,
 ax.legend()
 ax.set_ylabel('us')
 ax.set_xlabel('m')
-plt.savefig("algorithm_compare2.tif")
+plt.savefig("algorithm_compare1.tif")
 
 #
 # Demonstrate case when vector > bitset
@@ -49,4 +49,4 @@ ax.text(0.80, 0.10, "n=50,b=6", transform=ax.transAxes, fontsize=12,
 ax.legend()
 ax.set_ylabel('us')
 ax.set_xlabel('m')
-plt.savefig("algorithm_compare4.tif")
+plt.savefig("algorithm_compare2.tif")
