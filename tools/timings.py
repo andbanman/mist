@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+#
+# Library to time MIST searches for runtime performance analysis
+#
 import numpy as np
 import pandas as pd
 import libmist as lm
